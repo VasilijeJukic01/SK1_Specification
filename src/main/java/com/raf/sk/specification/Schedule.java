@@ -3,8 +3,8 @@ package com.raf.sk.specification;
 import com.raf.sk.specification.model.Appointment;
 import com.raf.sk.specification.model.ScheduleRoom;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -37,14 +37,46 @@ public abstract class Schedule {
      *
      * @param scheduleRoom - Room to be added to the schedule
      */
-    public abstract void addRoom(ScheduleRoom scheduleRoom);
+    public void addRoom(ScheduleRoom scheduleRoom) {
+        if (this.rooms == null || scheduleRoom == null) return;
+        this.rooms.add(scheduleRoom);
+    }
 
     /**
      * Adds a new appointment to the schedule.
      *
      * @param appointment - Appointment to be added to the schedule
      */
-    public abstract void addAppointment(Appointment appointment);
+    public void addAppointment(Appointment appointment) {
+        if (this.appointments == null || appointment == null) return;
+        if (isAppointmentFree(appointment))
+            this.appointments.add(appointment);
+        else throw new IllegalArgumentException("Appointment is not free");
+    }
+
+    private boolean isAppointmentFree(Appointment appointment) {
+        return appointments.stream()
+                .filter(a -> a.getScheduleRoom().equals(appointment.getScheduleRoom()) && !a.equals(appointment))
+                .noneMatch(a -> isDateOverlap(a, appointment) && isTimeOverlap(a, appointment));
+    }
+
+    private boolean isDateOverlap(Appointment appointment1, Appointment appointment2) {
+        LocalDate startDate1 = appointment1.getTime().getStartDate();
+        LocalDate endDate1 = appointment1.getTime().getEndDate();
+        LocalDate startDate2 = appointment2.getTime().getStartDate();
+        LocalDate endDate2 = appointment2.getTime().getEndDate();
+
+        return startDate1.isBefore(endDate2) && endDate1.isAfter(startDate2);
+    }
+
+    private boolean isTimeOverlap(Appointment appointment1, Appointment appointment2) {
+        int startTime1 = appointment1.getTime().getStartTime();
+        int endTime1 = appointment1.getTime().getEndTime();
+        int startTime2 = appointment2.getTime().getStartTime();
+        int endTime2 = appointment2.getTime().getEndTime();
+
+        return !(endTime1 <= startTime2 || endTime2 <= startTime1);
+    }
 
     /**
      * Deletes the given appointment from the schedule.
@@ -64,8 +96,21 @@ public abstract class Schedule {
      */
     public void switchAppointment(Appointment oldAppointment, Appointment newAppointment) {
         if (this.appointments == null || oldAppointment == null || newAppointment == null) return;
-        if (!(new HashSet<>(this.appointments).containsAll(List.of(oldAppointment, newAppointment)))) return;
-        // TODO: Finish this method
+        if (!appointments.contains(oldAppointment) || !checkAppointmentData(oldAppointment, newAppointment)) return;
+        if (!isAppointmentFree(newAppointment)) return;
+        this.appointments.remove(oldAppointment);
+        this.appointments.add(newAppointment);
+    }
+
+    private boolean checkAppointmentData(Appointment app1, Appointment app2) {
+        if (app1.getData().size() != app2.getData().size()) return false;
+        return app1.getData().entrySet().stream()
+                .allMatch(entry1 -> {
+                    String key = entry1.getKey();
+                    Object value1 = entry1.getValue();
+                    Object value2 = app2.getData().get(key);
+                    return value1.equals(value2);
+                });
     }
 
     /**

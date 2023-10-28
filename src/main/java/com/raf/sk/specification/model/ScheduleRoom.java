@@ -1,33 +1,42 @@
 package com.raf.sk.specification.model;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ScheduleRoom extends ScheduleObject {
 
+    private String name;
     private int capacity;
     private List<Equipment> equipment = new ArrayList<>();
 
-    public ScheduleRoom(int capacity) {
+    public ScheduleRoom(String name, int capacity) {
         super.data = new HashMap<>();
+        this.name = name;
         this.capacity = capacity;
     }
 
-    public ScheduleRoom(int capacity, List<Equipment> equipment) {
+    public ScheduleRoom(String name, int capacity, List<Equipment> equipment) {
         super.data = new HashMap<>();
+        this.name = name;
         this.capacity = capacity;
         this.equipment = equipment;
     }
 
-    public ScheduleRoom(int capacity, List<Equipment> equipment, Map<String, Object> data) {
+    public ScheduleRoom(String name, int capacity, List<Equipment> equipment, Map<String, Object> data) {
         super.data = data;
+        this.name = name;
         this.capacity = capacity;
         this.equipment = equipment;
     }
 
     // Getters and Setters
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public int getCapacity() {
         return capacity;
     }
@@ -42,6 +51,14 @@ public class ScheduleRoom extends ScheduleObject {
 
     public void setEquipment(List<Equipment> equipment) {
         this.equipment = equipment;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ScheduleRoom that = (ScheduleRoom) o;
+        return capacity == that.capacity && Objects.equals(name, that.name) && Objects.equals(equipment, that.equipment);
     }
 
 }
