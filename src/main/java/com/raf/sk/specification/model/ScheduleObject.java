@@ -22,7 +22,7 @@ public class ScheduleObject {
     }
 
     // Getters and Setters
-    public Map<String, Object> getData() {
+    public Map<String, Object> getAllData() {
         return data;
     }
 
