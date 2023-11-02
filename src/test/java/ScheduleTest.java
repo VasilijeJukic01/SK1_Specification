@@ -6,15 +6,19 @@ import com.raf.sk.specification.model.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Properties;
 
 public class ScheduleTest {
 
     @Test
     public void add_room_test() throws NoSuchFieldException, IllegalAccessException {
-        Schedule schedule = new TestSchedule();
+        Schedule schedule = new TestSchedule(null);
         ScheduleRoom room = new ScheduleRoom("RAF 20", 60);
 
         Field field = Schedule.class.getDeclaredField("rooms");
@@ -33,7 +37,7 @@ public class ScheduleTest {
 
     @Test
     public void add_appointment_basic_test() throws NoSuchFieldException, IllegalAccessException {
-        Schedule schedule = new TestSchedule();
+        Schedule schedule = new TestSchedule(null);
 
 
         Field field = Schedule.class.getDeclaredField("schedule");
@@ -57,7 +61,7 @@ public class ScheduleTest {
 
     @Test
     public void add_appointment_overlap_test() {
-        Schedule schedule = new TestSchedule();
+        Schedule schedule = new TestSchedule(null);
 
         ScheduleTime t1 = new ScheduleTime(Day.MONDAY, 8, 10, LocalDate.of(2022, 1, 1));
         ScheduleTime t2 = new ScheduleTime(Day.THUERSDAY, 8, 10, LocalDate.of(2021, 12, 30), LocalDate.of(2022, 1, 14));
@@ -83,7 +87,7 @@ public class ScheduleTest {
 
     @Test
     public void change_appointment_test() {
-        Schedule schedule = new TestSchedule();
+        Schedule schedule = new TestSchedule(null);
 
         ScheduleTime t1 = new ScheduleTime(Day.MONDAY, 8, 10, LocalDate.of(2022, 1, 1));
         ScheduleTime t2 = new ScheduleTime(Day.THUERSDAY, 8, 10, LocalDate.of(2021, 12, 30), LocalDate.of(2022, 1, 14));
@@ -110,6 +114,23 @@ public class ScheduleTest {
         a4.putData("Paprika", 43);
 
         Assertions.assertThrows(DifferentDataException.class, () -> schedule.changeAppointment(a1, a4));
+    }
+
+    @Test
+    public void free_test(){
+        Properties properties = new Properties();
+
+        FileInputStream fileInputStream = null;
+        try {
+            fileInputStream = new FileInputStream("src/main/java/com/raf/sk/specification/test.config");
+            properties.load(fileInputStream);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        Schedule schedule = new TestSchedule(properties);
+
+
     }
 
 }

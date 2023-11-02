@@ -7,6 +7,7 @@ import com.raf.sk.specification.exception.RoomNotFoundException;
 import com.raf.sk.specification.model.Appointment;
 import com.raf.sk.specification.model.Day;
 import com.raf.sk.specification.model.ScheduleRoom;
+import com.raf.sk.specification.model.ScheduleTime;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -22,22 +23,45 @@ import java.util.stream.Collectors;
  */
 public abstract class Schedule {
 
-    private List<Appointment> schedule;
+    private List<Appointment> reservedAppointments;
+    private List<Appointment> freeAppointments;
     private List<ScheduleRoom> rooms;
 
     /**
      * Default constructor for initializing the schedule. Creates empty lists for appointments and rooms.
      */
-    public Schedule() {
-        initSchedule();
+    public Schedule(Properties properties) {
+        initSchedule(properties);
     }
 
     /**
      * Initializes the schedule.
      */
-    private void initSchedule() {
-        this.schedule = new ArrayList<>();
+    private void initSchedule(Properties properties) {
+        this.reservedAppointments = new ArrayList<>();
+        this.freeAppointments = new ArrayList<>();
         this.rooms = new ArrayList<>();
+        initFreeAppointments(properties);
+    }
+
+    private void initFreeAppointments(Properties properties){
+        String roomData = properties.getProperty("rooms").replaceAll("\"", "");
+        String time = properties.getProperty("workingTime").replaceAll("\"", "");
+
+        String[] t = time.split("-");
+        int start = Integer.parseInt(t[0]);
+        int end = Integer.parseInt(t[1]);
+
+        String[] rooms = roomData.split(",");
+        for (String room : rooms) {
+            String[] roomInfo = room.split("-");
+            ScheduleRoom scheduleRoom = new ScheduleRoom(roomInfo[0],Integer.parseInt(roomInfo[1]));
+            ScheduleTime scheduleTime = new ScheduleTime(Day.MONDAY,start,end,LocalDate.of(2023,1,1),LocalDate.of(2024,1,1));
+            Appointment appointment = new Appointment(scheduleTime,scheduleRoom);
+            freeAppointments.add(appointment);
+            this.rooms.add(scheduleRoom);
+        }
+        System.out.println(this.freeAppointments);
     }
 
     /**
@@ -56,9 +80,10 @@ public abstract class Schedule {
      * @param appointment - Appointment to be added to the schedule
      */
     public void addAppointment(Appointment appointment) {
-        if (this.schedule == null || appointment == null) return;
-        if (isAppointmentFree(appointment))
-            this.schedule.add(appointment);
+        if (this.reservedAppointments == null || appointment == null) return;
+        if (isAppointmentFree(appointment)) {
+            this.reservedAppointments.add(appointment);
+        }
         else throw new AppointmentOverlapException("Appointment cannot be added due overlapping with another appointment");
     }
 
@@ -69,7 +94,7 @@ public abstract class Schedule {
      * @return - True if the appointment time and room are available, false if there's an overlap
      */
     public boolean isAppointmentFree(Appointment appointment) {
-        return schedule.stream()
+        return reservedAppointments.stream()
                 .filter(a -> a.getScheduleRoom().equals(appointment.getScheduleRoom())
                         && a.getTime().getDay().equals(appointment.getTime().getDay())
                         && !a.equals(appointment))
@@ -102,8 +127,8 @@ public abstract class Schedule {
      * @param appointment - Appointment to be deleted from the schedule
      */
     public void deleteAppointment(Appointment appointment) {
-        if (this.schedule == null || appointment == null) return;
-        this.schedule.remove(appointment);
+        if (this.reservedAppointments == null || appointment == null) return;
+        this.reservedAppointments.remove(appointment);
     }
 
     /**
@@ -115,15 +140,15 @@ public abstract class Schedule {
      * @throws DifferentDataException if appointments have different data
      */
     public void changeAppointment(Appointment oldAppointment, Appointment newAppointment) {
-        if (this.schedule == null || oldAppointment == null || newAppointment == null) return;
-        if (!schedule.contains(oldAppointment)) throw new AppointmentNotFoundException("Appointment not found");
+        if (this.reservedAppointments == null || oldAppointment == null || newAppointment == null) return;
+        if (!reservedAppointments.contains(oldAppointment)) throw new AppointmentNotFoundException("Appointment not found");
         if (!checkAppointmentData(oldAppointment, newAppointment)) throw new DifferentDataException("Appointments have different data");
-        this.schedule.remove(oldAppointment);
+        this.reservedAppointments.remove(oldAppointment);
         if (!isAppointmentFree(newAppointment)) {
-            this.schedule.add(oldAppointment);
+            this.reservedAppointments.add(oldAppointment);
             throw new AppointmentOverlapException("Appointment cannot be replaced due overlapping with another appointment");
         }
-        this.schedule.add(newAppointment);
+        this.reservedAppointments.add(newAppointment);
     }
 
     private boolean checkAppointmentData(Appointment app1, Appointment app2) {
@@ -153,7 +178,7 @@ public abstract class Schedule {
      * @return - A list of occupied appointments matching the query.
      */
     public List<Appointment> findTakenAppointmentsByDate(LocalDate date) {
-        return schedule.stream()
+        return reservedAppointments.stream()
                 .filter(appointment -> appointment.getTime().getStartDate().isEqual(date))
                 .collect(Collectors.toList());
     }
@@ -169,7 +194,7 @@ public abstract class Schedule {
      * @return - A list of occupied appointments matching the query.
      */
     public List<Appointment> findTakenAppointmentsByDayAndPeriod(Day day, LocalDate startDate, LocalDate endDate, int startTime, int endTime) {
-        return schedule.stream()
+        return reservedAppointments.stream()
                 .filter(appointment -> appointment.getTime().getDay().equals(day)
                         && appointment.getTime().getStartDate().equals(startDate)
                         && appointment.getTime().getEndDate().equals(endDate)
@@ -188,7 +213,7 @@ public abstract class Schedule {
      * @return - A list of occupied appointments matching the query.
      */
     public List<Appointment> findTakenAppointmentsByDateTime(LocalDate startDate, LocalDate endDate, int startTime, int endTime) {
-        return schedule.stream()
+        return reservedAppointments.stream()
                 .filter(appointment -> appointment.getTime().getStartDate().equals(startDate)
                         && appointment.getTime().getEndDate().equals(endDate)
                         && appointment.getTime().getStartTime() >= startTime
@@ -206,7 +231,7 @@ public abstract class Schedule {
      * @return - A list of occupied appointments matching the query.
      */
     public List<Appointment> findTakenAppointmentsByDateTimeDuration(LocalDate startDate, LocalDate endDate, int startTime, int duration) {
-        return schedule.stream()
+        return reservedAppointments.stream()
                 .filter(appointment -> appointment.getTime().getStartDate().equals(startDate)
                         && appointment.getTime().getEndDate().equals(endDate)
                         && appointment.getTime().getStartTime() >= startTime
@@ -223,7 +248,7 @@ public abstract class Schedule {
      */
     public List<Appointment> findTakenAppointmentsByRoom(ScheduleRoom room) {
         if (!rooms.contains(room)) throw new RoomNotFoundException("Room does not exist");
-        return schedule.stream()
+        return reservedAppointments.stream()
                 .filter(appointment -> appointment.getScheduleRoom().equals(room))
                 .collect(Collectors.toList());
     }
@@ -235,7 +260,7 @@ public abstract class Schedule {
      * @return - A list of occupied appointments that contain all the specified keys and values in the additional data.
      */
     public List<Appointment> findTakenAppointmentsByData(Map<String, Object> data) {
-        return schedule.stream()
+        return reservedAppointments.stream()
                 .filter(appointment -> data.entrySet().stream().allMatch(entry -> {
                     String key = entry.getKey();
                     Object value = entry.getValue();
@@ -258,7 +283,7 @@ public abstract class Schedule {
         if (keys == null || keys.length == 0)
             throw new IllegalArgumentException("At least one key must be provided for the search.");
 
-        return schedule.stream()
+        return reservedAppointments.stream()
                 .filter(appointment -> Arrays.stream(keys).allMatch(key -> appointment.getAllData().containsKey(key)))
                 .collect(Collectors.toList());
     }
