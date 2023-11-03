@@ -280,12 +280,89 @@ public abstract class Schedule {
     }
 
     /**
-     * Finds available appointments based on the given request.
+     * Finds free appointments based on the given date.
      *
-     * @return - List of available appointments matching the request
+     * @param date - The date for the search.
+     * @return - A list of free appointments matching the query.
      */
-    public List<Appointment> findFreeAppointments() {
-        return null;
+    public List<Appointment> findFreeAppointmentsByDate(LocalDate date) {
+        return ScheduleUtils.getInstance().findAppointmentsByDate(date, freeAppointments);
+    }
+
+    /**
+     * Finds free appointments based on the specified day, start date, end date, start time, and end time.
+     *
+     * @param day - The day of the week to search for.
+     * @param startDate - The start date of the appointment range.
+     * @param endDate - The end date of the appointment range.
+     * @param startTime - The start time of the appointment.
+     * @param endTime - The end time of the appointment.
+     * @return - A list of free appointments matching the query.
+     */
+    public List<Appointment> findFreeAppointmentsByDayAndPeriod(Day day, LocalDate startDate, LocalDate endDate, int startTime, int endTime) {
+        return ScheduleUtils.getInstance().findAppointmentsByDayAndPeriod(day, startDate, endDate, startTime, endTime, freeAppointments);
+    }
+
+    /**
+     * Finds free appointments based on the specified start date, end date, start time, and end time.
+     *
+     * @param startDate - The start date of the appointment range.
+     * @param endDate - The end date of the appointment range.
+     * @param startTime - The start time of the appointment.
+     * @param endTime - The end time of the appointment.
+     * @return - A list of free appointments matching the query.
+     */
+    public List<Appointment> findFreeAppointmentsByDateTime(LocalDate startDate, LocalDate endDate, int startTime, int endTime) {
+        return ScheduleUtils.getInstance().findAppointmentsByDateTime(startDate, endDate, startTime, endTime, freeAppointments);
+    }
+
+    /**
+     * Finds free appointments based on the specified start date, end date, start time, and duration.
+     *
+     * @param startDate - The start date of the appointment range.
+     * @param endDate - The end date of the appointment range.
+     * @param startTime - The start time of the appointment.
+     * @param duration - The duration of the appointment in minutes.
+     * @return - A list of free appointments matching the query.
+     */
+    public List<Appointment> findFreeAppointmentsByDateTimeDuration(LocalDate startDate, LocalDate endDate, int startTime, int duration) {
+        return ScheduleUtils.getInstance().findAppointmentsByDateTimeDuration(startDate, endDate, startTime, duration, freeAppointments);
+    }
+
+    /**
+     * Finds free appointments based on the specified room.
+     *
+     * @param room - The room to search for.
+     * @return - A list of free appointments held in the specified room.
+     * @throws RoomNotFoundException if the room does not exist.
+     */
+    public List<Appointment> findFreeAppointmentsByRoom(ScheduleRoom room) {
+        if (!rooms.contains(room)) throw new RoomNotFoundException("Room does not exist");
+        return ScheduleUtils.getInstance().findAppointmentsByRoom(room, freeAppointments);
+    }
+
+    /**
+     * Finds free appointments based on the specified additional data.
+     *
+     * @param data - A map containing keys and values of additional data for the search.
+     * @return - A list of free appointments that contain all the specified keys and values in the additional data.
+     */
+    public List<Appointment> findFreeAppointmentsByData(Map<String, Object> data) {
+        return ScheduleUtils.getInstance().findAppointmentsByData(data, freeAppointments);
+    }
+
+    /**
+     * Finds free appointments based on the specified keys in the additional data.
+     * <p>
+     * This method searches for appointments that contain all the specified keys in their additional data.
+     * The method returns a list of occupied appointments that match the criteria.
+     *
+     * @param keys - An array of keys to search for in the additional data of appointments.
+     * @return - A list of free appointments that contain all the specified keys in their additional data.
+     * @throws IllegalArgumentException if the 'data' array is empty.
+     */
+    public List<Appointment> findFreeAppointmentsByData(String ... keys) {
+        return ScheduleUtils.getInstance().findAppointmentsByData(freeAppointments, keys);
     }
 
     /**
@@ -295,9 +372,7 @@ public abstract class Schedule {
      * @return - A list of occupied appointments matching the query.
      */
     public List<Appointment> findTakenAppointmentsByDate(LocalDate date) {
-        return reservedAppointments.stream()
-                .filter(appointment -> appointment.getTime().getStartDate().isEqual(date))
-                .collect(Collectors.toList());
+        return ScheduleUtils.getInstance().findAppointmentsByDate(date, reservedAppointments);
     }
 
     /**
@@ -311,13 +386,7 @@ public abstract class Schedule {
      * @return - A list of occupied appointments matching the query.
      */
     public List<Appointment> findTakenAppointmentsByDayAndPeriod(Day day, LocalDate startDate, LocalDate endDate, int startTime, int endTime) {
-        return reservedAppointments.stream()
-                .filter(appointment -> appointment.getTime().getDay().equals(day)
-                        && appointment.getTime().getStartDate().equals(startDate)
-                        && appointment.getTime().getEndDate().equals(endDate)
-                        && appointment.getTime().getStartTime() >= startTime
-                        && appointment.getTime().getEndTime() <= endTime)
-                .collect(Collectors.toList());
+        return ScheduleUtils.getInstance().findAppointmentsByDayAndPeriod(day, startDate, endDate, startTime, endTime, reservedAppointments);
     }
 
     /**
@@ -330,12 +399,7 @@ public abstract class Schedule {
      * @return - A list of occupied appointments matching the query.
      */
     public List<Appointment> findTakenAppointmentsByDateTime(LocalDate startDate, LocalDate endDate, int startTime, int endTime) {
-        return reservedAppointments.stream()
-                .filter(appointment -> appointment.getTime().getStartDate().equals(startDate)
-                        && appointment.getTime().getEndDate().equals(endDate)
-                        && appointment.getTime().getStartTime() >= startTime
-                        && appointment.getTime().getEndTime() <= endTime)
-                .collect(Collectors.toList());
+        return ScheduleUtils.getInstance().findAppointmentsByDateTime(startDate, endDate, startTime, endTime, reservedAppointments);
     }
 
     /**
@@ -348,12 +412,7 @@ public abstract class Schedule {
      * @return - A list of occupied appointments matching the query.
      */
     public List<Appointment> findTakenAppointmentsByDateTimeDuration(LocalDate startDate, LocalDate endDate, int startTime, int duration) {
-        return reservedAppointments.stream()
-                .filter(appointment -> appointment.getTime().getStartDate().equals(startDate)
-                        && appointment.getTime().getEndDate().equals(endDate)
-                        && appointment.getTime().getStartTime() >= startTime
-                        && appointment.getTime().getEndTime() <= startTime + duration)
-                .collect(Collectors.toList());
+        return ScheduleUtils.getInstance().findAppointmentsByDateTimeDuration(startDate, endDate, startTime, duration, reservedAppointments);
     }
 
     /**
@@ -365,9 +424,7 @@ public abstract class Schedule {
      */
     public List<Appointment> findTakenAppointmentsByRoom(ScheduleRoom room) {
         if (!rooms.contains(room)) throw new RoomNotFoundException("Room does not exist");
-        return reservedAppointments.stream()
-                .filter(appointment -> appointment.getScheduleRoom().equals(room))
-                .collect(Collectors.toList());
+        return ScheduleUtils.getInstance().findAppointmentsByRoom(room, reservedAppointments);
     }
 
     /**
@@ -377,13 +434,7 @@ public abstract class Schedule {
      * @return - A list of occupied appointments that contain all the specified keys and values in the additional data.
      */
     public List<Appointment> findTakenAppointmentsByData(Map<String, Object> data) {
-        return reservedAppointments.stream()
-                .filter(appointment -> data.entrySet().stream().allMatch(entry -> {
-                    String key = entry.getKey();
-                    Object value = entry.getValue();
-                    return appointment.getAllData().containsKey(key) && appointment.getAllData().get(key).equals(value);
-                }))
-                .collect(Collectors.toList());
+        return ScheduleUtils.getInstance().findAppointmentsByData(data, reservedAppointments);
     }
 
     /**
@@ -397,12 +448,7 @@ public abstract class Schedule {
      * @throws IllegalArgumentException if the 'data' array is empty.
      */
     public List<Appointment> findTakenAppointmentsByData(String ... keys) {
-        if (keys == null || keys.length == 0)
-            throw new IllegalArgumentException("At least one key must be provided for the search.");
-
-        return reservedAppointments.stream()
-                .filter(appointment -> Arrays.stream(keys).allMatch(key -> appointment.getAllData().containsKey(key)))
-                .collect(Collectors.toList());
+        return ScheduleUtils.getInstance().findAppointmentsByData(reservedAppointments, keys);
     }
 
     /**
