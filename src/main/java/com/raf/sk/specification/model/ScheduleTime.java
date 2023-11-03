@@ -1,5 +1,7 @@
 package com.raf.sk.specification.model;
 
+import com.raf.sk.specification.ScheduleUtils;
+
 import java.time.LocalDate;
 import java.util.Objects;
 
@@ -18,12 +20,12 @@ public class ScheduleTime {
         this.endDate = endDate;
     }
 
-    public ScheduleTime(Day day, int startTime, int endTime, LocalDate startDate) {
-        this.day = day;
+    public ScheduleTime(int startTime, int endTime, LocalDate date) {
+        this.day = ScheduleUtils.getInstance().getDayFromDate(date);
         this.startTime = startTime;
         this.endTime = endTime;
-        this.startDate = startDate;
-        this.endDate = startDate;
+        this.startDate = date;
+        this.endDate = date;
     }
 
     public Day getDay() {
@@ -74,4 +76,14 @@ public class ScheduleTime {
         return startTime == that.startTime && endTime == that.endTime && day == that.day && Objects.equals(startDate, that.startDate) && Objects.equals(endDate, that.endDate);
     }
 
+    @Override
+    public String toString() {
+        return "ScheduleTime{" +
+                "day=" + day +
+                ", startTime=" + startTime +
+                ", endTime=" + endTime +
+                ", startDate=" + startDate +
+                ", endDate=" + endDate +
+                '}';
+    }
 }

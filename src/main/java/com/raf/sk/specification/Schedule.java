@@ -27,16 +27,16 @@ public abstract class Schedule {
     private List<Appointment> freeAppointments;
     private List<ScheduleRoom> rooms;
 
+    // TODO: Document configuration file format
     /**
      * Default constructor for initializing the schedule. Creates empty lists for appointments and rooms.
+     *
+     * @param properties - Schedule configuration file
      */
     public Schedule(Properties properties) {
         initSchedule(properties);
     }
 
-    /**
-     * Initializes the schedule.
-     */
     private void initSchedule(Properties properties) {
         this.reservedAppointments = new ArrayList<>();
         this.freeAppointments = new ArrayList<>();
@@ -46,22 +46,28 @@ public abstract class Schedule {
 
     private void initFreeAppointments(Properties properties){
         String roomData = properties.getProperty("rooms").replaceAll("\"", "");
-        String time = properties.getProperty("workingTime").replaceAll("\"", "");
+        String timeData = properties.getProperty("workingTime").replaceAll("\"", "");
 
-        String[] t = time.split("-");
-        int start = Integer.parseInt(t[0]);
-        int end = Integer.parseInt(t[1]);
+        String[] workingHours = timeData.split("-");
+        int start = Integer.parseInt(workingHours[0]);
+        int end = Integer.parseInt(workingHours[1]);
+        String[] scheduleRooms = roomData.split(",");
 
-        String[] rooms = roomData.split(",");
-        for (String room : rooms) {
+        initFreeRooms(scheduleRooms, start, end);
+
+    }
+
+    private void initFreeRooms( String[] scheduleRooms, int start, int end) {
+        for (String room : scheduleRooms) {
             String[] roomInfo = room.split("-");
-            ScheduleRoom scheduleRoom = new ScheduleRoom(roomInfo[0],Integer.parseInt(roomInfo[1]));
-            ScheduleTime scheduleTime = new ScheduleTime(Day.MONDAY,start,end,LocalDate.of(2023,1,1),LocalDate.of(2024,1,1));
-            Appointment appointment = new Appointment(scheduleTime,scheduleRoom);
-            freeAppointments.add(appointment);
-            this.rooms.add(scheduleRoom);
+            ScheduleRoom scheduleRoom = new ScheduleRoom(roomInfo[0], Integer.parseInt(roomInfo[1]));
+            rooms.add(scheduleRoom);
+            for (Day day : Day.values()) {
+                ScheduleTime scheduleTime = new ScheduleTime(day, start, end, LocalDate.of(2023,1,1),LocalDate.of(2023,12,31));
+                Appointment appointment = new Appointment(scheduleTime,scheduleRoom);
+                freeAppointments.add(appointment);
+            }
         }
-        System.out.println(this.freeAppointments);
     }
 
     /**
@@ -83,8 +89,119 @@ public abstract class Schedule {
         if (this.reservedAppointments == null || appointment == null) return;
         if (isAppointmentFree(appointment)) {
             this.reservedAppointments.add(appointment);
+            updateFreeAppointments(appointment);
         }
         else throw new AppointmentOverlapException("Appointment cannot be added due overlapping with another appointment");
+    }
+
+    public void updateFreeAppointments(Appointment reservedAppointment) {
+        List<Appointment> updateList = freeAppointments.stream()
+                .filter(freeAppointment -> freeAppointment.getScheduleRoom().equals(reservedAppointment.getScheduleRoom())
+                        && freeAppointment.getTime().getDay().equals(reservedAppointment.getTime().getDay()))
+                .collect(Collectors.toList());
+
+        updateList.forEach(freeAppointment -> updateFreeAppointmentDate(freeAppointment, reservedAppointment));
+    }
+
+    private void updateFreeAppointmentDate(Appointment freeAppointment, Appointment reservedAppointment) {
+        if (ScheduleUtils.getInstance().areTwoAppointmentsHaveSameDate(freeAppointment, reservedAppointment)) {
+            freeAppointments.remove(freeAppointment);
+            updateFreeAppointmentTime(freeAppointment, reservedAppointment);
+        }
+        else if (ScheduleUtils.getInstance().areTwoAppointmentsHaveSameStartDate(freeAppointment, reservedAppointment)) {
+            updateSameStartDateAppointments(freeAppointment, reservedAppointment);
+        }
+        else if (ScheduleUtils.getInstance().areTwoAppointmentsHaveSameEndDate(freeAppointment, reservedAppointment)) {
+            updateSameEndDateAppointments(freeAppointment, reservedAppointment);
+        }
+        else if (ScheduleUtils.getInstance().isOneAppointmentDateContainsAnother(freeAppointment, reservedAppointment)) {
+            updateBetweenDatesAppointments(freeAppointment, reservedAppointment);
+        }
+    }
+
+    private void updateSameStartDateAppointments(Appointment freeAppointment, Appointment reservedAppointment) {
+        Appointment appointment;
+        ScheduleTime t1 = freeAppointment.getTime();
+        ScheduleTime t2 = reservedAppointment.getTime();
+
+        ScheduleTime s = new ScheduleTime(t1.getDay(), t1.getStartTime(), t1.getEndTime(), t1.getStartDate(), t2.getEndDate());
+
+        if (ScheduleUtils.getInstance().isAppointmentInOneDay(reservedAppointment)) {
+            freeAppointment.getTime().setStartDate(reservedAppointment.getTime().getEndDate().plusDays(1));
+        }
+        else freeAppointment.getTime().setStartDate(reservedAppointment.getTime().getEndDate());
+
+        appointment = new Appointment(s, freeAppointment.getScheduleRoom());
+        updateFreeAppointmentTime(appointment, reservedAppointment);
+    }
+
+    private void updateSameEndDateAppointments(Appointment freeAppointment, Appointment reservedAppointment) {
+        Appointment appointment;
+        ScheduleTime t1 = freeAppointment.getTime();
+        ScheduleTime t2 = reservedAppointment.getTime();
+
+        ScheduleTime s = new ScheduleTime(t1.getDay(), t1.getStartTime(), t1.getEndTime(), t2.getStartDate(), t1.getEndDate());
+
+        if (ScheduleUtils.getInstance().isAppointmentInOneDay(reservedAppointment)) {
+            freeAppointment.getTime().setEndDate(reservedAppointment.getTime().getStartDate().minusDays(1));
+        }
+        else freeAppointment.getTime().setEndDate(reservedAppointment.getTime().getStartDate());
+
+        appointment = new Appointment(s, freeAppointment.getScheduleRoom());
+        updateFreeAppointmentTime(appointment, reservedAppointment);
+    }
+
+    private void updateBetweenDatesAppointments(Appointment freeAppointment, Appointment reservedAppointment) {
+        Appointment appointment1, appointment2;
+        ScheduleTime t1 = freeAppointment.getTime();
+        ScheduleTime t2 = reservedAppointment.getTime();
+
+        if (ScheduleUtils.getInstance().isAppointmentInOneDay(reservedAppointment)) {
+            ScheduleTime s1 = new ScheduleTime(t1.getDay(), t1.getStartTime(), t1.getEndTime(), t1.getStartDate(), t2.getStartDate().minusDays(1));
+            ScheduleTime s2 = new ScheduleTime(t1.getDay(), t1.getStartTime(), t1.getEndTime(),t2.getEndDate().plusDays(1), t1.getEndDate());
+            appointment1 = new Appointment(s1, freeAppointment.getScheduleRoom());
+            appointment2 = new Appointment(s2, freeAppointment.getScheduleRoom());
+        }
+        else {
+            ScheduleTime s3 = new ScheduleTime(t1.getDay(), t1.getStartTime(), t1.getEndTime(), t1.getStartDate(), t2.getStartDate());
+            ScheduleTime s4 = new ScheduleTime(t1.getDay(), t1.getStartTime(), t1.getEndTime(), t2.getEndDate(), t1.getEndDate());
+            appointment1 = new Appointment(s3, freeAppointment.getScheduleRoom());
+            appointment2 = new Appointment(s4, freeAppointment.getScheduleRoom());
+        }
+
+        freeAppointments.add(appointment1);
+        freeAppointments.add(appointment2);
+        ScheduleTime s = new ScheduleTime(t1.getDay(), t1.getStartTime(), t1.getEndTime(), t2.getStartDate(), t2.getEndDate());
+        Appointment appointment3 = new Appointment(s, freeAppointment.getScheduleRoom());
+        updateFreeAppointmentTime(appointment3, reservedAppointment);
+        freeAppointments.remove(freeAppointment);
+    }
+
+    private void updateFreeAppointmentTime(Appointment freeAppointment, Appointment reservedAppointment) {
+        if (ScheduleUtils.getInstance().areTwoAppointmentsHaveSameTime(freeAppointment, reservedAppointment)) {
+            freeAppointments.remove(freeAppointment);
+        }
+        else if (ScheduleUtils.getInstance().areTwoAppointmentsHaveSameStartTime(freeAppointment, reservedAppointment)) {
+            freeAppointment.getTime().setStartTime(reservedAppointment.getTime().getEndTime());
+            freeAppointments.add(freeAppointment);
+        }
+        else if (ScheduleUtils.getInstance().areTwoAppointmentsHaveSameEndTime(freeAppointment, reservedAppointment)) {
+            freeAppointment.getTime().setEndTime(reservedAppointment.getTime().getStartTime());
+            freeAppointments.add(freeAppointment);
+        }
+        else if (ScheduleUtils.getInstance().isOneAppointmentTimeContainsAnother(freeAppointment, reservedAppointment)) {
+            ScheduleTime t1 = freeAppointment.getTime();
+            ScheduleTime t2 = reservedAppointment.getTime();
+
+            ScheduleTime s1 = new ScheduleTime(t2.getDay(), t1.getStartTime(), t2.getStartTime(), t2.getStartDate(), t2.getEndDate());
+            ScheduleTime s2 = new ScheduleTime(t2.getDay(), t2.getEndTime(), t1.getEndTime(), t2.getStartDate(), t2.getEndDate());
+
+            Appointment appointment1 = new Appointment(s1, reservedAppointment.getScheduleRoom());
+            Appointment appointment2 = new Appointment(s2, reservedAppointment.getScheduleRoom());
+            freeAppointments.add(appointment1);
+            freeAppointments.add(appointment2);
+            freeAppointments.remove(freeAppointment);
+        }
     }
 
     /**
