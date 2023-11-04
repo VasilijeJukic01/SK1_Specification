@@ -15,8 +15,4 @@ public class TestSchedule extends Schedule {
 
     }
 
-    @Override
-    public void saveScheduleToFile(String path, String format) {
-
-    }
 }

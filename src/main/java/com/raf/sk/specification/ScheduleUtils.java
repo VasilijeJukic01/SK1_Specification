@@ -1,9 +1,12 @@
 package com.raf.sk.specification;
 
+import com.opencsv.CSVWriter;
 import com.raf.sk.specification.model.Appointment;
 import com.raf.sk.specification.model.Day;
 import com.raf.sk.specification.model.ScheduleRoom;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -80,26 +83,26 @@ public class ScheduleUtils {
 
     public List<Appointment> findAppointmentsByDayAndPeriod(Day day, LocalDate startDate, LocalDate endDate, int startTime, int endTime, List<Appointment> appointments) {
         Predicate<Appointment> predicate = a -> a.getTime().getDay().equals(day)
-                && a.getTime().getStartDate().equals(startDate)
-                && a.getTime().getEndDate().equals(endDate)
-                && a.getTime().getStartTime() >= startTime
-                && a.getTime().getEndTime() <= endTime;
+                && a.getTime().getStartDate().isBefore(endDate)
+                && a.getTime().getEndDate().isAfter(startDate)
+                && a.getTime().getStartTime() <= startTime
+                && a.getTime().getEndTime() >= endTime;
         return findAppointmentsByCriteria(predicate, appointments);
     }
 
     public List<Appointment> findAppointmentsByDateTime(LocalDate startDate, LocalDate endDate, int startTime, int endTime, List<Appointment> appointments) {
-        Predicate<Appointment> predicate = a -> a.getTime().getStartDate().equals(startDate)
-                && a.getTime().getEndDate().equals(endDate)
-                && a.getTime().getStartTime() >= startTime
-                && a.getTime().getEndTime() <= endTime;
+        Predicate<Appointment> predicate = a -> a.getTime().getStartDate().isBefore(endDate)
+                && a.getTime().getEndDate().isAfter(startDate)
+                && a.getTime().getStartTime() <= startTime
+                && a.getTime().getEndTime() >= endTime;
         return findAppointmentsByCriteria(predicate, appointments);
     }
 
     public List<Appointment> findAppointmentsByDateTimeDuration(LocalDate startDate, LocalDate endDate, int startTime, int duration, List<Appointment> appointments) {
-        Predicate<Appointment> predicate = a -> a.getTime().getStartDate().equals(startDate)
-                && a.getTime().getEndDate().equals(endDate)
-                && a.getTime().getStartTime() >= startTime
-                && a.getTime().getEndTime() <= startTime + duration;
+        Predicate<Appointment> predicate = a ->  a.getTime().getStartDate().isBefore(endDate)
+                && a.getTime().getEndDate().isAfter(startDate)
+                && a.getTime().getStartTime() <= startTime
+                && a.getTime().getEndTime() >= startTime + duration;
         return findAppointmentsByCriteria(predicate, appointments);
     }
 
@@ -123,6 +126,26 @@ public class ScheduleUtils {
 
         Predicate<Appointment> predicate = appointment -> Arrays.stream(keys).allMatch(key -> appointment.getAllData().containsKey(key));
         return ScheduleUtils.getInstance().findAppointmentsByCriteria(predicate, appointments);
+    }
+
+    // Appointment data operations
+    public void saveToCSV(List<Appointment> appointments, String path) throws IOException {
+        try (CSVWriter writer = new CSVWriter(new FileWriter(path))) {
+            for (Appointment appointment : appointments) {
+                String[] data = {String.valueOf(appointment.getTime().getDay()),
+                        String.valueOf(appointment.getTime().getStartTime()),
+                        String.valueOf(appointment.getTime().getEndTime()),
+                        String.valueOf(appointment.getTime().getStartDate()),
+                        String.valueOf(appointment.getTime().getEndDate()),
+                        appointment.getScheduleRoom().getName(),
+                };
+                writer.writeNext(data);
+            }
+        }
+    }
+
+    public void saveToJSON(List<Appointment> appointments, String path) throws IOException {
+        // TODO
     }
 
 }

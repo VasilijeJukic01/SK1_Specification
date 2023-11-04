@@ -9,6 +9,7 @@ import com.raf.sk.specification.model.Day;
 import com.raf.sk.specification.model.ScheduleRoom;
 import com.raf.sk.specification.model.ScheduleTime;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,9 +28,12 @@ public abstract class Schedule {
     private List<Appointment> freeAppointments;
     private List<ScheduleRoom> rooms;
 
-    // TODO: Document configuration file format
     /**
      * Default constructor for initializing the schedule. Creates empty lists for appointments and rooms.
+     * <p>
+     * Configuration file format is as follows:
+     *  workingTime = "%d-%d"
+     *  rooms = "%s-%d,%s-%d, ..."
      *
      * @param properties - Schedule configuration file
      */
@@ -41,10 +45,10 @@ public abstract class Schedule {
         this.reservedAppointments = new ArrayList<>();
         this.freeAppointments = new ArrayList<>();
         this.rooms = new ArrayList<>();
-        initFreeAppointments(properties);
+        extractConfigurationData(properties);
     }
 
-    private void initFreeAppointments(Properties properties){
+    private void extractConfigurationData(Properties properties){
         String roomData = properties.getProperty("rooms").replaceAll("\"", "");
         String timeData = properties.getProperty("workingTime").replaceAll("\"", "");
 
@@ -54,7 +58,6 @@ public abstract class Schedule {
         String[] scheduleRooms = roomData.split(",");
 
         initFreeRooms(scheduleRooms, start, end);
-
     }
 
     private void initFreeRooms( String[] scheduleRooms, int start, int end) {
@@ -78,6 +81,18 @@ public abstract class Schedule {
     public void addRoom(ScheduleRoom scheduleRoom) {
         if (this.rooms == null || scheduleRoom == null) return;
         this.rooms.add(scheduleRoom);
+    }
+
+    /**
+     * Searches for a room with given name.
+     *
+     * @param name - Name of the room to be searched for
+     */
+    public ScheduleRoom getRoomByName(String name) {
+        return this.rooms.stream()
+                .filter(room -> room.getName().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new RoomNotFoundException("Room not found"));
     }
 
     /**
@@ -186,6 +201,7 @@ public abstract class Schedule {
             freeAppointments.add(freeAppointment);
         }
         else if (ScheduleUtils.getInstance().areTwoAppointmentsHaveSameEndTime(freeAppointment, reservedAppointment)) {
+            if (freeAppointment.getTime().getStartDate().equals(reservedAppointment.getTime().getStartDate())) return;
             freeAppointment.getTime().setEndTime(reservedAppointment.getTime().getStartTime());
             freeAppointments.add(freeAppointment);
         }
@@ -464,6 +480,36 @@ public abstract class Schedule {
      * @param path - Path to the file to which the schedule is saved
      * @param format - File format (e.g., JSON, CSV)
      */
-    public abstract void saveScheduleToFile(String path, String format);
+    public void saveScheduleToFile(String path, String format) throws IOException {
+        if (format.equals("CSV")) ScheduleUtils.getInstance().saveToCSV(reservedAppointments, path);
+        else if (format.equals("JSON")) ScheduleUtils.getInstance().saveToJSON(reservedAppointments, path);
+    }
+
+    /**
+     * Returns the list of reserved appointments.
+     *
+     * @return - List of reserved appointments
+     */
+    public List<Appointment> getReservedAppointments() {
+        return Collections.unmodifiableList(reservedAppointments);
+    }
+
+    /**
+     * Returns the list of free appointments.
+     *
+     * @return - List of free appointments
+     */
+    public List<Appointment> getFreeAppointments() {
+        return Collections.unmodifiableList(freeAppointments);
+    }
+
+    /**
+     * Returns the list of rooms.
+     *
+     * @return - List of rooms
+     */
+    public List<ScheduleRoom> getRooms() {
+        return Collections.unmodifiableList(rooms);
+    }
 
 }
