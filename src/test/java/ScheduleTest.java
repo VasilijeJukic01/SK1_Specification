@@ -7,69 +7,64 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 public class ScheduleTest {
 
     @Test
-    public void add_room_test() throws NoSuchFieldException, IllegalAccessException {
-        Schedule schedule = new TestSchedule(null);
-        ScheduleRoom room = new ScheduleRoom("RAF 20", 60);
+    public void add_room_test() {
+        Schedule schedule = new TestSchedule(getProperties());
+        ScheduleRoom room = new ScheduleRoom("RAF20", 60);
 
-        Field field = Schedule.class.getDeclaredField("rooms");
-        field.setAccessible(true);
+        List<ScheduleRoom> rooms = schedule.getRooms();
 
-        @SuppressWarnings("unchecked")
-        List<ScheduleRoom> rooms = (List<ScheduleRoom>) field.get(schedule);
-
-        Assertions.assertTrue(rooms.isEmpty());
-        schedule.addRoom(null);
-        Assertions.assertTrue(rooms.isEmpty());
+        Assertions.assertFalse(rooms.isEmpty());
 
         schedule.addRoom(room);
-        Assertions.assertEquals(1, rooms.size());
+        Assertions.assertEquals(4, rooms.size());
     }
 
     @Test
-    public void add_appointment_basic_test() throws NoSuchFieldException, IllegalAccessException {
-        Schedule schedule = new TestSchedule(null);
+    public void add_appointment_basic_test() {
+        Schedule schedule = new TestSchedule(getProperties());
 
+        List<Appointment> freeAppointments = schedule.getFreeAppointments();
+        List<Appointment> reservedAppointments = schedule.getReservedAppointments();
 
-        Field field = Schedule.class.getDeclaredField("schedule");
-        field.setAccessible(true);
+        int freeAppointmentsSize = freeAppointments.size();
 
-        @SuppressWarnings("unchecked")
-        List<Appointment> appointments = (List<Appointment>) field.get(schedule);
-
-        Assertions.assertTrue(appointments.isEmpty());
+        Assertions.assertTrue(reservedAppointments.isEmpty());
         schedule.addAppointment(null);
-        Assertions.assertTrue(appointments.isEmpty());
+        Assertions.assertTrue(reservedAppointments.isEmpty());
 
-        ScheduleTime t1 = new ScheduleTime(Day.MONDAY, 8, 10, LocalDate.of(2022, 1, 1));
-        ScheduleRoom r1 = new ScheduleRoom("RAF 6", 50);
+        ScheduleTime t1 = new ScheduleTime(8, 10, LocalDate.of(2023, 1, 1));
+        ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
         Appointment a1 = new Appointment(t1, r1);
 
         schedule.addAppointment(a1);
-        Assertions.assertEquals(1, appointments.size());
-        Assertions.assertTrue(appointments.contains(a1));
+        Assertions.assertEquals(1, reservedAppointments.size());
+        Assertions.assertTrue(reservedAppointments.contains(a1));
+
+        Assertions.assertEquals(freeAppointmentsSize + 1, freeAppointments.size());
     }
 
     @Test
     public void add_appointment_overlap_test() {
-        Schedule schedule = new TestSchedule(null);
+        Schedule schedule = new TestSchedule(getProperties());
 
-        ScheduleTime t1 = new ScheduleTime(Day.MONDAY, 8, 10, LocalDate.of(2022, 1, 1));
-        ScheduleTime t2 = new ScheduleTime(Day.THUERSDAY, 8, 10, LocalDate.of(2021, 12, 30), LocalDate.of(2022, 1, 14));
-        ScheduleTime t3 = new ScheduleTime(Day.THUERSDAY, 10, 15, LocalDate.of(2021, 12, 30), LocalDate.of(2022, 1, 14));
-        ScheduleTime t4 = new ScheduleTime(Day.MONDAY, 9, 12, LocalDate.of(2022, 1, 1), LocalDate.of(2022, 1, 4));
-        ScheduleTime t5 = new ScheduleTime(Day.THUERSDAY, 9, 16, LocalDate.of(2022, 1, 14), LocalDate.of(2022, 1, 15));
+        ScheduleTime t1 = new ScheduleTime(8, 10, LocalDate.of(2023, 1, 2));
+        ScheduleTime t2 = new ScheduleTime(Day.MONDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
+        ScheduleTime t3 = new ScheduleTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
 
-        ScheduleRoom r1 = new ScheduleRoom("RAF 6", 50);
+        ScheduleTime t4 = new ScheduleTime(Day.MONDAY, 8, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
+        ScheduleTime t5 = new ScheduleTime(Day.MONDAY, 9, 13, LocalDate.of(2023, 1, 2), LocalDate.of(2023, 1, 8));
+
+        ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
 
         Appointment a1 = new Appointment(t1, r1);
         Appointment a2 = new Appointment(t2, r1);
@@ -87,15 +82,15 @@ public class ScheduleTest {
 
     @Test
     public void change_appointment_test() {
-        Schedule schedule = new TestSchedule(null);
+        Schedule schedule = new TestSchedule(getProperties());
 
-        ScheduleTime t1 = new ScheduleTime(Day.MONDAY, 8, 10, LocalDate.of(2022, 1, 1));
-        ScheduleTime t2 = new ScheduleTime(Day.THUERSDAY, 8, 10, LocalDate.of(2021, 12, 30), LocalDate.of(2022, 1, 14));
-        ScheduleTime t3 = new ScheduleTime(Day.THUERSDAY, 10, 15, LocalDate.of(2021, 12, 30), LocalDate.of(2022, 1, 14));
-        ScheduleTime t4 = new ScheduleTime(Day.MONDAY, 9, 12, LocalDate.of(2022, 1, 1), LocalDate.of(2022, 1, 4));
-        ScheduleTime t5 = new ScheduleTime(Day.THUERSDAY, 9, 16, LocalDate.of(2022, 1, 14), LocalDate.of(2022, 1, 15));
+        ScheduleTime t1 = new ScheduleTime(8, 10, LocalDate.of(2023, 1, 2));
+        ScheduleTime t2 = new ScheduleTime(Day.MONDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
+        ScheduleTime t3 = new ScheduleTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
+        ScheduleTime t4 = new ScheduleTime(Day.MONDAY, 9, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
+        ScheduleTime t5 = new ScheduleTime(Day.WEDNESDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
 
-        ScheduleRoom r1 = new ScheduleRoom("RAF 6", 50);
+        ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
 
         Appointment a1 = new Appointment(t1, r1);
         Appointment a2 = new Appointment(t2, r1);
@@ -108,29 +103,156 @@ public class ScheduleTest {
         schedule.addAppointment(a3);
 
         Assertions.assertThrows(AppointmentNotFoundException.class, () -> schedule.changeAppointment(a5, a2));
-        // Assertions.assertThrows(AppointmentOverlapException.class, () -> schedule.changeAppointment(a1, a4));
+        Assertions.assertThrows(AppointmentOverlapException.class, () -> schedule.changeAppointment(a1, a4));
 
         a1.putData("Paprika", 45);
         a4.putData("Paprika", 43);
 
         Assertions.assertThrows(DifferentDataException.class, () -> schedule.changeAppointment(a1, a4));
+
+        List<Appointment> reservedAppointments = schedule.getReservedAppointments();
+        Assertions.assertEquals(3, reservedAppointments.size());
     }
 
     @Test
-    public void free_test(){
-        Properties properties = new Properties();
+    public void free_appointment_test(){
+        Schedule schedule = new TestSchedule(getProperties());
 
-        FileInputStream fileInputStream = null;
-        try {
-            fileInputStream = new FileInputStream("src/main/java/com/raf/sk/specification/test.config");
-            properties.load(fileInputStream);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        ScheduleTime t1 = new ScheduleTime(8, 10, LocalDate.of(2023, 1, 2));
+        ScheduleTime t2 = new ScheduleTime(Day.THURSDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
+        ScheduleTime t3 = new ScheduleTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
+        ScheduleTime t4 = new ScheduleTime(Day.THURSDAY, 19, 21, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 10));
+        ScheduleTime t5 = new ScheduleTime(Day.THURSDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
+
+        ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
+
+        Appointment a1 = new Appointment(t1, r1);
+        Appointment a2 = new Appointment(t2, r1);
+        Appointment a3 = new Appointment(t3, r1);
+        Appointment a4 = new Appointment(t4, r1);
+        Appointment a5 = new Appointment(t5, r1);
+
+        schedule.addAppointment(a1);
+        schedule.addAppointment(a2);
+        schedule.addAppointment(a3);
+        schedule.addAppointment(a4);
+        schedule.addAppointment(a5);
+
+        List<Appointment> freeAppointments = schedule.getFreeAppointments();
+        List<Appointment> reservedAppointments = schedule.getReservedAppointments();
+
+        for (Appointment appointment : freeAppointments) {
+            if (appointment.getScheduleRoom().getName().equals("RAF1"))
+                System.out.println(appointment.getTime()+" "+appointment.getScheduleRoom().getName());
         }
 
-        Schedule schedule = new TestSchedule(properties);
+        System.out.println("--------------------------------------------------");
 
+        for (Appointment appointment : reservedAppointments) {
+            if (appointment.getScheduleRoom().getName().equals("RAF1"))
+                System.out.println(appointment.getTime()+" "+appointment.getScheduleRoom().getName());
+        }
+    }
 
+    @Test
+    public void reserved_appointments_search_test() {
+        Schedule schedule = new TestSchedule(getProperties());
+
+        ScheduleTime t1 = new ScheduleTime(8, 10, LocalDate.of(2023, 1, 2));
+        ScheduleTime t2 = new ScheduleTime(Day.THURSDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
+        ScheduleTime t3 = new ScheduleTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
+        ScheduleTime t4 = new ScheduleTime(Day.MONDAY, 9, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
+        ScheduleTime t5 = new ScheduleTime(Day.WEDNESDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
+
+        ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
+
+        Appointment a1 = new Appointment(t1, r1);
+        Appointment a2 = new Appointment(t2, r1);
+        Appointment a3 = new Appointment(t3, r1);
+        Appointment a4 = new Appointment(t4, r1);
+        Appointment a5 = new Appointment(t5, r1);
+
+        schedule.addAppointment(a1);
+        schedule.addAppointment(a2);
+        schedule.addAppointment(a3);
+        schedule.addAppointment(a5);
+
+        List<Appointment> reservedAppointments = schedule.getReservedAppointments();
+
+        Assertions.assertEquals(4, reservedAppointments.size());
+
+        List<Appointment> appointmentsByDate = schedule.findTakenAppointmentsByDate(LocalDate.of(2023, 1, 3));
+        Assertions.assertEquals(2, appointmentsByDate.size());
+
+        List<Appointment> appointmentsByDayAndPeriod = schedule.findTakenAppointmentsByDayAndPeriod(Day.THURSDAY, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12), 10, 15);
+        Assertions.assertEquals(1, appointmentsByDayAndPeriod.size());
+
+        List<Appointment> appointmentsByDateTime = schedule.findTakenAppointmentsByDateTime(LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12), 10, 15);
+        Assertions.assertEquals(1, appointmentsByDateTime.size());
+
+        List<Appointment> appointmentsByDateTimeDuration = schedule.findTakenAppointmentsByDateTimeDuration(LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12), 10, 5);
+        Assertions.assertEquals(1, appointmentsByDateTimeDuration.size());
+
+        List<Appointment> appointmentsByRoom = schedule.findTakenAppointmentsByRoom(r1);
+        Assertions.assertEquals(4, appointmentsByRoom.size());
+
+        a1.putData("Computer", "Windows");
+        a1.putData("Lab", "L1");
+
+        Map<String, Object> data = new HashMap<>(a1.getAllData());
+
+        List<Appointment> appointmentsByData = schedule.findTakenAppointmentsByData("Computer", "Lab");
+        Assertions.assertEquals(1, appointmentsByData.size());
+
+        List<Appointment> appointmentsByAllData = schedule.findTakenAppointmentsByData(data);
+        Assertions.assertEquals(1, appointmentsByAllData.size());
+    }
+
+    @Test
+    public void free_appointments_search_test() {
+        Schedule schedule = new TestSchedule(getProperties());
+
+        ScheduleTime t1 = new ScheduleTime(8, 10, LocalDate.of(2023, 1, 2));
+        ScheduleTime t2 = new ScheduleTime(Day.THURSDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
+        ScheduleTime t3 = new ScheduleTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
+        ScheduleTime t4 = new ScheduleTime(Day.MONDAY, 9, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
+        ScheduleTime t5 = new ScheduleTime(Day.WEDNESDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
+
+        ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
+
+        Appointment a1 = new Appointment(t1, r1);
+        Appointment a2 = new Appointment(t2, r1);
+        Appointment a3 = new Appointment(t3, r1);
+        Appointment a4 = new Appointment(t4, r1);
+        Appointment a5 = new Appointment(t5, r1);
+
+        schedule.addAppointment(a1);
+        schedule.addAppointment(a2);
+        schedule.addAppointment(a3);
+        schedule.addAppointment(a5);
+
+        List<Appointment> appointmentsByDate = schedule.findFreeAppointmentsByDate(LocalDate.of(2023, 1, 3));
+        Assertions.assertEquals(2, appointmentsByDate.size());
+
+        List<Appointment> appointmentsByDayAndPeriod = schedule.findFreeAppointmentsByDayAndPeriod(Day.THURSDAY, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 12, 31), 10, 15);
+        Assertions.assertEquals(5, appointmentsByDayAndPeriod.size());
+
+        List<Appointment> appointmentsByDateTime = schedule.findFreeAppointmentsByDateTime(LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12), 10, 15);
+        Assertions.assertEquals(20, appointmentsByDateTime.size());
+
+        List<Appointment> appointmentsByRoom = schedule.findFreeAppointmentsByRoom(r1);
+        Assertions.assertEquals(15, appointmentsByRoom.size());
+    }
+
+    private Properties getProperties() {
+        try (FileInputStream fileInputStream = new FileInputStream("src/test/resources/test.config")) {
+            Properties properties = new Properties();
+            properties.load(fileInputStream);
+            return properties;
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
