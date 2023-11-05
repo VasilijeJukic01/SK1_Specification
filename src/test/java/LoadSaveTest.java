@@ -28,7 +28,7 @@ public class LoadSaveTest {
         schedule.addAppointment(a2);
         schedule.addAppointment(a3);
 
-        schedule.saveScheduleToFile("src/test/resources/test.csv", "CSV");
+        schedule.saveScheduleToFile("src/test/resources/test.csv", "CSV", getProperties());
 
     }
 

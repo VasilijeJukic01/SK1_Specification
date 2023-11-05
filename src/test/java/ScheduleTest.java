@@ -143,7 +143,7 @@ public class ScheduleTest {
         List<Appointment> reservedAppointments = schedule.getReservedAppointments();
 
         for (Appointment appointment : freeAppointments) {
-            if (appointment.getScheduleRoom().getName().equals("RAF1") && appointment.getTime().getDay().equals(Day.THURSDAY))
+            if (appointment.getScheduleRoom().getName().equals("RAF1"))
                 System.out.println(appointment.getTime()+" "+appointment.getScheduleRoom().getName());
         }
 

@@ -33,6 +33,10 @@ public class ScheduleRoom extends ScheduleObject {
         this.equipment = equipment;
     }
 
+    public void addEquipment(Equipment equipment) {
+        this.equipment.add(equipment);
+    }
+
     // Getters and Setters
     public String getName() {
         return name;
@@ -51,7 +55,7 @@ public class ScheduleRoom extends ScheduleObject {
     }
 
     public List<Equipment> getEquipment() {
-        return equipment;
+        return Collections.unmodifiableList(equipment);
     }
 
     public void setEquipment(List<Equipment> equipment) {
