@@ -1,27 +1,36 @@
 package com.raf.sk.specification.model;
 
+import com.raf.sk.specification.model.time.Time;
+
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Appointment class.
+ * <p>
+ * An appointment is a schedule object that has a time and a room.
+ * </p>
+ */
 public class Appointment extends ScheduleObject {
 
-    private ScheduleTime time;
+    private Time<LocalDate> time;
     private ScheduleRoom scheduleRoom;
 
-    public Appointment(ScheduleTime time, ScheduleRoom scheduleRoom) {
+    public Appointment(Time<LocalDate> time, ScheduleRoom scheduleRoom) {
         super.data = new HashMap<>();
         this.time = time;
         this.scheduleRoom = scheduleRoom;
     }
 
-    public Appointment(ScheduleTime time, ScheduleRoom scheduleRoom, Map<String, Object> data) {
+    public Appointment(Time<LocalDate> time, ScheduleRoom scheduleRoom, Map<String, Object> data) {
         super.data = data;
         this.time = time;
         this.scheduleRoom = scheduleRoom;
     }
 
     // Getters and Setters
-    public ScheduleTime getTime() {
+    public Time<LocalDate> getTime() {
         return time;
     }
 
@@ -29,7 +38,7 @@ public class Appointment extends ScheduleObject {
         return scheduleRoom;
     }
 
-    public void setTime(ScheduleTime time) {
+    public void setTime(Time<LocalDate> time) {
         this.time = time;
     }
 

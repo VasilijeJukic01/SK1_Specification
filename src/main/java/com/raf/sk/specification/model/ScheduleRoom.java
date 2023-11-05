@@ -2,6 +2,11 @@ package com.raf.sk.specification.model;
 
 import java.util.*;
 
+/**
+ * Represents model for room.
+ * <p>
+ * @see ScheduleObject
+ */
 public class ScheduleRoom extends ScheduleObject {
 
     private String name;

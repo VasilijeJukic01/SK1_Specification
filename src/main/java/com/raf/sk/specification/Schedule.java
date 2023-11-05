@@ -4,10 +4,9 @@ import com.raf.sk.specification.exception.AppointmentNotFoundException;
 import com.raf.sk.specification.exception.AppointmentOverlapException;
 import com.raf.sk.specification.exception.DifferentDataException;
 import com.raf.sk.specification.exception.RoomNotFoundException;
-import com.raf.sk.specification.model.Appointment;
-import com.raf.sk.specification.model.Day;
-import com.raf.sk.specification.model.ScheduleRoom;
-import com.raf.sk.specification.model.ScheduleTime;
+import com.raf.sk.specification.model.*;
+import com.raf.sk.specification.model.time.FreeTime;
+import com.raf.sk.specification.model.time.Time;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -60,16 +59,24 @@ public abstract class Schedule {
         initFreeRooms(scheduleRooms, start, end);
     }
 
-    private void initFreeRooms( String[] scheduleRooms, int start, int end) {
-        for (String room : scheduleRooms) {
-            String[] roomInfo = room.split("-");
-            ScheduleRoom scheduleRoom = new ScheduleRoom(roomInfo[0], Integer.parseInt(roomInfo[1]));
-            rooms.add(scheduleRoom);
-            for (Day day : Day.values()) {
-                ScheduleTime scheduleTime = new ScheduleTime(day, start, end, LocalDate.of(2023,1,1),LocalDate.of(2023,12,31));
-                Appointment appointment = new Appointment(scheduleTime,scheduleRoom);
-                freeAppointments.add(appointment);
-            }
+    private void initFreeRooms(String[] scheduleRooms, int start, int end) {
+        Arrays.stream(scheduleRooms).forEach(room -> initFreeRoom(room, start, end));
+    }
+
+    private void initFreeRoom(String room, int start, int end) {
+        String[] roomInfo = room.split("-");
+        ScheduleRoom scheduleRoom = new ScheduleRoom(roomInfo[0], Integer.parseInt(roomInfo[1]));
+        rooms.add(scheduleRoom);
+
+        LocalDate startDate = LocalDate.of(2023, 1, 1);
+        LocalDate endDate = LocalDate.of(2023, 12, 31);
+        LocalDate currentDate = startDate;
+
+        while (!currentDate.isAfter(endDate)) {
+            FreeTime time = new FreeTime(ScheduleUtils.getInstance().getDayFromDate(currentDate), start, end, currentDate);
+            Appointment appointment = new Appointment(time, scheduleRoom);
+            freeAppointments.add(appointment);
+            currentDate = currentDate.plusDays(1);
         }
     }
 
@@ -112,84 +119,12 @@ public abstract class Schedule {
     public void updateFreeAppointments(Appointment reservedAppointment) {
         List<Appointment> updateList = freeAppointments.stream()
                 .filter(freeAppointment -> freeAppointment.getScheduleRoom().equals(reservedAppointment.getScheduleRoom())
+                        && freeAppointment.getTime().getDate().isAfter(reservedAppointment.getTime().getStartDate().minusDays(1))
+                        && freeAppointment.getTime().getDate().isBefore(reservedAppointment.getTime().getEndDate().plusDays(1))
                         && freeAppointment.getTime().getDay().equals(reservedAppointment.getTime().getDay()))
                 .collect(Collectors.toList());
 
-        updateList.forEach(freeAppointment -> updateFreeAppointmentDate(freeAppointment, reservedAppointment));
-    }
-
-    private void updateFreeAppointmentDate(Appointment freeAppointment, Appointment reservedAppointment) {
-        if (ScheduleUtils.getInstance().areTwoAppointmentsHaveSameDate(freeAppointment, reservedAppointment)) {
-            freeAppointments.remove(freeAppointment);
-            updateFreeAppointmentTime(freeAppointment, reservedAppointment);
-        }
-        else if (ScheduleUtils.getInstance().areTwoAppointmentsHaveSameStartDate(freeAppointment, reservedAppointment)) {
-            updateSameStartDateAppointments(freeAppointment, reservedAppointment);
-        }
-        else if (ScheduleUtils.getInstance().areTwoAppointmentsHaveSameEndDate(freeAppointment, reservedAppointment)) {
-            updateSameEndDateAppointments(freeAppointment, reservedAppointment);
-        }
-        else if (ScheduleUtils.getInstance().isOneAppointmentDateContainsAnother(freeAppointment, reservedAppointment)) {
-            updateBetweenDatesAppointments(freeAppointment, reservedAppointment);
-        }
-    }
-
-    private void updateSameStartDateAppointments(Appointment freeAppointment, Appointment reservedAppointment) {
-        Appointment appointment;
-        ScheduleTime t1 = freeAppointment.getTime();
-        ScheduleTime t2 = reservedAppointment.getTime();
-
-        ScheduleTime s = new ScheduleTime(t1.getDay(), t1.getStartTime(), t1.getEndTime(), t1.getStartDate(), t2.getEndDate());
-
-        if (ScheduleUtils.getInstance().isAppointmentInOneDay(reservedAppointment)) {
-            freeAppointment.getTime().setStartDate(reservedAppointment.getTime().getEndDate().plusDays(1));
-        }
-        else freeAppointment.getTime().setStartDate(reservedAppointment.getTime().getEndDate());
-
-        appointment = new Appointment(s, freeAppointment.getScheduleRoom());
-        updateFreeAppointmentTime(appointment, reservedAppointment);
-    }
-
-    private void updateSameEndDateAppointments(Appointment freeAppointment, Appointment reservedAppointment) {
-        Appointment appointment;
-        ScheduleTime t1 = freeAppointment.getTime();
-        ScheduleTime t2 = reservedAppointment.getTime();
-
-        ScheduleTime s = new ScheduleTime(t1.getDay(), t1.getStartTime(), t1.getEndTime(), t2.getStartDate(), t1.getEndDate());
-
-        if (ScheduleUtils.getInstance().isAppointmentInOneDay(reservedAppointment)) {
-            freeAppointment.getTime().setEndDate(reservedAppointment.getTime().getStartDate().minusDays(1));
-        }
-        else freeAppointment.getTime().setEndDate(reservedAppointment.getTime().getStartDate());
-
-        appointment = new Appointment(s, freeAppointment.getScheduleRoom());
-        updateFreeAppointmentTime(appointment, reservedAppointment);
-    }
-
-    private void updateBetweenDatesAppointments(Appointment freeAppointment, Appointment reservedAppointment) {
-        Appointment appointment1, appointment2;
-        ScheduleTime t1 = freeAppointment.getTime();
-        ScheduleTime t2 = reservedAppointment.getTime();
-
-        if (ScheduleUtils.getInstance().isAppointmentInOneDay(reservedAppointment)) {
-            ScheduleTime s1 = new ScheduleTime(t1.getDay(), t1.getStartTime(), t1.getEndTime(), t1.getStartDate(), t2.getStartDate().minusDays(1));
-            ScheduleTime s2 = new ScheduleTime(t1.getDay(), t1.getStartTime(), t1.getEndTime(),t2.getEndDate().plusDays(1), t1.getEndDate());
-            appointment1 = new Appointment(s1, freeAppointment.getScheduleRoom());
-            appointment2 = new Appointment(s2, freeAppointment.getScheduleRoom());
-        }
-        else {
-            ScheduleTime s3 = new ScheduleTime(t1.getDay(), t1.getStartTime(), t1.getEndTime(), t1.getStartDate(), t2.getStartDate());
-            ScheduleTime s4 = new ScheduleTime(t1.getDay(), t1.getStartTime(), t1.getEndTime(), t2.getEndDate(), t1.getEndDate());
-            appointment1 = new Appointment(s3, freeAppointment.getScheduleRoom());
-            appointment2 = new Appointment(s4, freeAppointment.getScheduleRoom());
-        }
-
-        freeAppointments.add(appointment1);
-        freeAppointments.add(appointment2);
-        ScheduleTime s = new ScheduleTime(t1.getDay(), t1.getStartTime(), t1.getEndTime(), t2.getStartDate(), t2.getEndDate());
-        Appointment appointment3 = new Appointment(s, freeAppointment.getScheduleRoom());
-        updateFreeAppointmentTime(appointment3, reservedAppointment);
-        freeAppointments.remove(freeAppointment);
+        updateList.forEach(freeAppointment -> updateFreeAppointmentTime(freeAppointment, reservedAppointment));
     }
 
     private void updateFreeAppointmentTime(Appointment freeAppointment, Appointment reservedAppointment) {
@@ -198,19 +133,16 @@ public abstract class Schedule {
         }
         else if (ScheduleUtils.getInstance().areTwoAppointmentsHaveSameStartTime(freeAppointment, reservedAppointment)) {
             freeAppointment.getTime().setStartTime(reservedAppointment.getTime().getEndTime());
-            freeAppointments.add(freeAppointment);
         }
         else if (ScheduleUtils.getInstance().areTwoAppointmentsHaveSameEndTime(freeAppointment, reservedAppointment)) {
-            if (freeAppointment.getTime().getStartDate().equals(reservedAppointment.getTime().getStartDate())) return;
             freeAppointment.getTime().setEndTime(reservedAppointment.getTime().getStartTime());
-            freeAppointments.add(freeAppointment);
         }
         else if (ScheduleUtils.getInstance().isOneAppointmentTimeContainsAnother(freeAppointment, reservedAppointment)) {
-            ScheduleTime t1 = freeAppointment.getTime();
-            ScheduleTime t2 = reservedAppointment.getTime();
+            Time<LocalDate> t1 = freeAppointment.getTime();
+            Time<LocalDate>  t2 = reservedAppointment.getTime();
 
-            ScheduleTime s1 = new ScheduleTime(t2.getDay(), t1.getStartTime(), t2.getStartTime(), t2.getStartDate(), t2.getEndDate());
-            ScheduleTime s2 = new ScheduleTime(t2.getDay(), t2.getEndTime(), t1.getEndTime(), t2.getStartDate(), t2.getEndDate());
+            FreeTime s1 = new FreeTime(t1.getDay(), t1.getStartTime(), t2.getStartTime(), t1.getDate());
+            FreeTime s2 = new FreeTime(t1.getDay(), t2.getEndTime(), t1.getEndTime(), t1.getDate());
 
             Appointment appointment1 = new Appointment(s1, reservedAppointment.getScheduleRoom());
             Appointment appointment2 = new Appointment(s2, reservedAppointment.getScheduleRoom());
@@ -302,7 +234,7 @@ public abstract class Schedule {
      * @return - A list of free appointments matching the query.
      */
     public List<Appointment> findFreeAppointmentsByDate(LocalDate date) {
-        return ScheduleUtils.getInstance().findAppointmentsByDate(date, freeAppointments);
+        return ScheduleUtils.getInstance().findFreeAppointmentsByDate(date, freeAppointments);
     }
 
     /**
@@ -316,7 +248,7 @@ public abstract class Schedule {
      * @return - A list of free appointments matching the query.
      */
     public List<Appointment> findFreeAppointmentsByDayAndPeriod(Day day, LocalDate startDate, LocalDate endDate, int startTime, int endTime) {
-        return ScheduleUtils.getInstance().findAppointmentsByDayAndPeriod(day, startDate, endDate, startTime, endTime, freeAppointments);
+        return ScheduleUtils.getInstance().findFreeAppointmentsByDayAndPeriod(day, startDate, endDate, startTime, endTime, freeAppointments);
     }
 
     /**
@@ -329,7 +261,7 @@ public abstract class Schedule {
      * @return - A list of free appointments matching the query.
      */
     public List<Appointment> findFreeAppointmentsByDateTime(LocalDate startDate, LocalDate endDate, int startTime, int endTime) {
-        return ScheduleUtils.getInstance().findAppointmentsByDateTime(startDate, endDate, startTime, endTime, freeAppointments);
+        return ScheduleUtils.getInstance().findFreeAppointmentsByDateTime(startDate, endDate, startTime, endTime, freeAppointments);
     }
 
     /**
@@ -342,7 +274,7 @@ public abstract class Schedule {
      * @return - A list of free appointments matching the query.
      */
     public List<Appointment> findFreeAppointmentsByDateTimeDuration(LocalDate startDate, LocalDate endDate, int startTime, int duration) {
-        return ScheduleUtils.getInstance().findAppointmentsByDateTimeDuration(startDate, endDate, startTime, duration, freeAppointments);
+        return ScheduleUtils.getInstance().findFreeAppointmentsByDateTimeDuration(startDate, endDate, startTime, duration, freeAppointments);
     }
 
     /**
@@ -387,8 +319,8 @@ public abstract class Schedule {
      * @param date - The date for the search.
      * @return - A list of occupied appointments matching the query.
      */
-    public List<Appointment> findTakenAppointmentsByDate(LocalDate date) {
-        return ScheduleUtils.getInstance().findAppointmentsByDate(date, reservedAppointments);
+    public List<Appointment> findReservedAppointmentsByDate(LocalDate date) {
+        return ScheduleUtils.getInstance().findReservedAppointmentsByDate(date, reservedAppointments);
     }
 
     /**
@@ -401,8 +333,8 @@ public abstract class Schedule {
      * @param endTime - The end time of the appointment.
      * @return - A list of occupied appointments matching the query.
      */
-    public List<Appointment> findTakenAppointmentsByDayAndPeriod(Day day, LocalDate startDate, LocalDate endDate, int startTime, int endTime) {
-        return ScheduleUtils.getInstance().findAppointmentsByDayAndPeriod(day, startDate, endDate, startTime, endTime, reservedAppointments);
+    public List<Appointment> findReservedAppointmentsByDayAndPeriod(Day day, LocalDate startDate, LocalDate endDate, int startTime, int endTime) {
+        return ScheduleUtils.getInstance().findReservedAppointmentsByDayAndPeriod(day, startDate, endDate, startTime, endTime, reservedAppointments);
     }
 
     /**
@@ -414,8 +346,8 @@ public abstract class Schedule {
      * @param endTime - The end time of the appointment.
      * @return - A list of occupied appointments matching the query.
      */
-    public List<Appointment> findTakenAppointmentsByDateTime(LocalDate startDate, LocalDate endDate, int startTime, int endTime) {
-        return ScheduleUtils.getInstance().findAppointmentsByDateTime(startDate, endDate, startTime, endTime, reservedAppointments);
+    public List<Appointment> findReservedAppointmentsByDateTime(LocalDate startDate, LocalDate endDate, int startTime, int endTime) {
+        return ScheduleUtils.getInstance().findReservedAppointmentsByDateTime(startDate, endDate, startTime, endTime, reservedAppointments);
     }
 
     /**
@@ -427,8 +359,8 @@ public abstract class Schedule {
      * @param duration - The duration of the appointment in minutes.
      * @return - A list of occupied appointments matching the query.
      */
-    public List<Appointment> findTakenAppointmentsByDateTimeDuration(LocalDate startDate, LocalDate endDate, int startTime, int duration) {
-        return ScheduleUtils.getInstance().findAppointmentsByDateTimeDuration(startDate, endDate, startTime, duration, reservedAppointments);
+    public List<Appointment> findReservedAppointmentsByDateTimeDuration(LocalDate startDate, LocalDate endDate, int startTime, int duration) {
+        return ScheduleUtils.getInstance().findReservedAppointmentsByDateTimeDuration(startDate, endDate, startTime, duration, reservedAppointments);
     }
 
     /**
@@ -438,7 +370,7 @@ public abstract class Schedule {
      * @return - A list of occupied appointments held in the specified room.
      * @throws RoomNotFoundException if the room does not exist.
      */
-    public List<Appointment> findTakenAppointmentsByRoom(ScheduleRoom room) {
+    public List<Appointment> findReservedAppointmentsByRoom(ScheduleRoom room) {
         if (!rooms.contains(room)) throw new RoomNotFoundException("Room does not exist");
         return ScheduleUtils.getInstance().findAppointmentsByRoom(room, reservedAppointments);
     }
@@ -449,7 +381,7 @@ public abstract class Schedule {
      * @param data - A map containing keys and values of additional data for the search.
      * @return - A list of occupied appointments that contain all the specified keys and values in the additional data.
      */
-    public List<Appointment> findTakenAppointmentsByData(Map<String, Object> data) {
+    public List<Appointment> findReservedAppointmentsByData(Map<String, Object> data) {
         return ScheduleUtils.getInstance().findAppointmentsByData(data, reservedAppointments);
     }
 
@@ -463,7 +395,7 @@ public abstract class Schedule {
      * @return - A list of occupied appointments that contain all the specified keys in their additional data.
      * @throws IllegalArgumentException if the 'data' array is empty.
      */
-    public List<Appointment> findTakenAppointmentsByData(String ... keys) {
+    public List<Appointment> findReservedAppointmentsByData(String ... keys) {
         return ScheduleUtils.getInstance().findAppointmentsByData(reservedAppointments, keys);
     }
 
@@ -472,7 +404,9 @@ public abstract class Schedule {
      *
      * @param path - Path to the file from which the schedule is loaded
      */
-    public abstract void loadScheduleFromFile(String path);
+    public void loadScheduleFromFile(String path) {
+        // TODO: Implement this method
+    }
 
     /**
      * Saves the schedule to a file in the specified format.

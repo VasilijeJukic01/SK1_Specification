@@ -3,6 +3,7 @@ import com.raf.sk.specification.exception.AppointmentNotFoundException;
 import com.raf.sk.specification.exception.AppointmentOverlapException;
 import com.raf.sk.specification.exception.DifferentDataException;
 import com.raf.sk.specification.model.*;
+import com.raf.sk.specification.model.time.ReservedTime;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +43,7 @@ public class ScheduleTest {
         schedule.addAppointment(null);
         Assertions.assertTrue(reservedAppointments.isEmpty());
 
-        ScheduleTime t1 = new ScheduleTime(8, 10, LocalDate.of(2023, 1, 1));
+        ReservedTime t1 = new ReservedTime(8, 10, LocalDate.of(2023, 1, 1));
         ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
         Appointment a1 = new Appointment(t1, r1);
 
@@ -50,19 +51,19 @@ public class ScheduleTest {
         Assertions.assertEquals(1, reservedAppointments.size());
         Assertions.assertTrue(reservedAppointments.contains(a1));
 
-        Assertions.assertEquals(freeAppointmentsSize + 1, freeAppointments.size());
+        Assertions.assertEquals(freeAppointmentsSize, freeAppointments.size());
     }
 
     @Test
     public void add_appointment_overlap_test() {
         Schedule schedule = new TestSchedule(getProperties());
 
-        ScheduleTime t1 = new ScheduleTime(8, 10, LocalDate.of(2023, 1, 2));
-        ScheduleTime t2 = new ScheduleTime(Day.MONDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
-        ScheduleTime t3 = new ScheduleTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
+        ReservedTime t1 = new ReservedTime(8, 10, LocalDate.of(2023, 1, 2));
+        ReservedTime t2 = new ReservedTime(Day.MONDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
+        ReservedTime t3 = new ReservedTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
 
-        ScheduleTime t4 = new ScheduleTime(Day.MONDAY, 8, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
-        ScheduleTime t5 = new ScheduleTime(Day.MONDAY, 9, 13, LocalDate.of(2023, 1, 2), LocalDate.of(2023, 1, 8));
+        ReservedTime t4 = new ReservedTime(Day.MONDAY, 8, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
+        ReservedTime t5 = new ReservedTime(Day.MONDAY, 9, 13, LocalDate.of(2023, 1, 2), LocalDate.of(2023, 1, 8));
 
         ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
 
@@ -84,11 +85,11 @@ public class ScheduleTest {
     public void change_appointment_test() {
         Schedule schedule = new TestSchedule(getProperties());
 
-        ScheduleTime t1 = new ScheduleTime(8, 10, LocalDate.of(2023, 1, 2));
-        ScheduleTime t2 = new ScheduleTime(Day.MONDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
-        ScheduleTime t3 = new ScheduleTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
-        ScheduleTime t4 = new ScheduleTime(Day.MONDAY, 9, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
-        ScheduleTime t5 = new ScheduleTime(Day.WEDNESDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
+        ReservedTime t1 = new ReservedTime(8, 10, LocalDate.of(2023, 1, 2));
+        ReservedTime t2 = new ReservedTime(Day.MONDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
+        ReservedTime t3 = new ReservedTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
+        ReservedTime t4 = new ReservedTime(Day.MONDAY, 9, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
+        ReservedTime t5 = new ReservedTime(Day.WEDNESDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
 
         ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
 
@@ -118,11 +119,11 @@ public class ScheduleTest {
     public void free_appointment_test(){
         Schedule schedule = new TestSchedule(getProperties());
 
-        ScheduleTime t1 = new ScheduleTime(8, 10, LocalDate.of(2023, 1, 2));
-        ScheduleTime t2 = new ScheduleTime(Day.THURSDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
-        ScheduleTime t3 = new ScheduleTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
-        ScheduleTime t4 = new ScheduleTime(Day.THURSDAY, 19, 21, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 10));
-        ScheduleTime t5 = new ScheduleTime(Day.THURSDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
+        ReservedTime t1 = new ReservedTime(8, 10, LocalDate.of(2023, 1, 2));
+        ReservedTime t2 = new ReservedTime(Day.THURSDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
+        ReservedTime t3 = new ReservedTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
+        ReservedTime t4 = new ReservedTime(Day.THURSDAY, 19, 21, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 10));
+        ReservedTime t5 = new ReservedTime(Day.THURSDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
 
         ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
 
@@ -142,7 +143,7 @@ public class ScheduleTest {
         List<Appointment> reservedAppointments = schedule.getReservedAppointments();
 
         for (Appointment appointment : freeAppointments) {
-            if (appointment.getScheduleRoom().getName().equals("RAF1"))
+            if (appointment.getScheduleRoom().getName().equals("RAF1") && appointment.getTime().getDay().equals(Day.THURSDAY))
                 System.out.println(appointment.getTime()+" "+appointment.getScheduleRoom().getName());
         }
 
@@ -158,11 +159,11 @@ public class ScheduleTest {
     public void reserved_appointments_search_test() {
         Schedule schedule = new TestSchedule(getProperties());
 
-        ScheduleTime t1 = new ScheduleTime(8, 10, LocalDate.of(2023, 1, 2));
-        ScheduleTime t2 = new ScheduleTime(Day.THURSDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
-        ScheduleTime t3 = new ScheduleTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
-        ScheduleTime t4 = new ScheduleTime(Day.MONDAY, 9, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
-        ScheduleTime t5 = new ScheduleTime(Day.WEDNESDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
+        ReservedTime t1 = new ReservedTime(8, 10, LocalDate.of(2023, 1, 2));
+        ReservedTime t2 = new ReservedTime(Day.THURSDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
+        ReservedTime t3 = new ReservedTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
+        ReservedTime t4 = new ReservedTime(Day.MONDAY, 9, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
+        ReservedTime t5 = new ReservedTime(Day.WEDNESDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
 
         ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
 
@@ -181,19 +182,19 @@ public class ScheduleTest {
 
         Assertions.assertEquals(4, reservedAppointments.size());
 
-        List<Appointment> appointmentsByDate = schedule.findTakenAppointmentsByDate(LocalDate.of(2023, 1, 3));
+        List<Appointment> appointmentsByDate = schedule.findReservedAppointmentsByDate(LocalDate.of(2023, 1, 3));
         Assertions.assertEquals(2, appointmentsByDate.size());
 
-        List<Appointment> appointmentsByDayAndPeriod = schedule.findTakenAppointmentsByDayAndPeriod(Day.THURSDAY, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12), 10, 15);
+        List<Appointment> appointmentsByDayAndPeriod = schedule.findReservedAppointmentsByDayAndPeriod(Day.THURSDAY, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12), 10, 15);
         Assertions.assertEquals(1, appointmentsByDayAndPeriod.size());
 
-        List<Appointment> appointmentsByDateTime = schedule.findTakenAppointmentsByDateTime(LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12), 10, 15);
+        List<Appointment> appointmentsByDateTime = schedule.findReservedAppointmentsByDateTime(LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12), 10, 15);
         Assertions.assertEquals(1, appointmentsByDateTime.size());
 
-        List<Appointment> appointmentsByDateTimeDuration = schedule.findTakenAppointmentsByDateTimeDuration(LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12), 10, 5);
+        List<Appointment> appointmentsByDateTimeDuration = schedule.findReservedAppointmentsByDateTimeDuration(LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12), 10, 5);
         Assertions.assertEquals(1, appointmentsByDateTimeDuration.size());
 
-        List<Appointment> appointmentsByRoom = schedule.findTakenAppointmentsByRoom(r1);
+        List<Appointment> appointmentsByRoom = schedule.findReservedAppointmentsByRoom(r1);
         Assertions.assertEquals(4, appointmentsByRoom.size());
 
         a1.putData("Computer", "Windows");
@@ -201,10 +202,10 @@ public class ScheduleTest {
 
         Map<String, Object> data = new HashMap<>(a1.getAllData());
 
-        List<Appointment> appointmentsByData = schedule.findTakenAppointmentsByData("Computer", "Lab");
+        List<Appointment> appointmentsByData = schedule.findReservedAppointmentsByData("Computer", "Lab");
         Assertions.assertEquals(1, appointmentsByData.size());
 
-        List<Appointment> appointmentsByAllData = schedule.findTakenAppointmentsByData(data);
+        List<Appointment> appointmentsByAllData = schedule.findReservedAppointmentsByData(data);
         Assertions.assertEquals(1, appointmentsByAllData.size());
     }
 
@@ -212,11 +213,11 @@ public class ScheduleTest {
     public void free_appointments_search_test() {
         Schedule schedule = new TestSchedule(getProperties());
 
-        ScheduleTime t1 = new ScheduleTime(8, 10, LocalDate.of(2023, 1, 2));
-        ScheduleTime t2 = new ScheduleTime(Day.THURSDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
-        ScheduleTime t3 = new ScheduleTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
-        ScheduleTime t4 = new ScheduleTime(Day.MONDAY, 9, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
-        ScheduleTime t5 = new ScheduleTime(Day.WEDNESDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
+        ReservedTime t1 = new ReservedTime(8, 10, LocalDate.of(2023, 1, 2));
+        ReservedTime t2 = new ReservedTime(Day.THURSDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
+        ReservedTime t3 = new ReservedTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
+        ReservedTime t4 = new ReservedTime(Day.MONDAY, 9, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
+        ReservedTime t5 = new ReservedTime(Day.WEDNESDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
 
         ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
 
@@ -232,16 +233,16 @@ public class ScheduleTest {
         schedule.addAppointment(a5);
 
         List<Appointment> appointmentsByDate = schedule.findFreeAppointmentsByDate(LocalDate.of(2023, 1, 3));
-        Assertions.assertEquals(2, appointmentsByDate.size());
+        Assertions.assertEquals(3, appointmentsByDate.size());
 
         List<Appointment> appointmentsByDayAndPeriod = schedule.findFreeAppointmentsByDayAndPeriod(Day.THURSDAY, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 12, 31), 10, 15);
-        Assertions.assertEquals(5, appointmentsByDayAndPeriod.size());
+        Assertions.assertEquals(154, appointmentsByDayAndPeriod.size());
 
         List<Appointment> appointmentsByDateTime = schedule.findFreeAppointmentsByDateTime(LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12), 10, 15);
-        Assertions.assertEquals(20, appointmentsByDateTime.size());
+        Assertions.assertEquals(23, appointmentsByDateTime.size());
 
         List<Appointment> appointmentsByRoom = schedule.findFreeAppointmentsByRoom(r1);
-        Assertions.assertEquals(15, appointmentsByRoom.size());
+        Assertions.assertEquals(366, appointmentsByRoom.size());
     }
 
     private Properties getProperties() {

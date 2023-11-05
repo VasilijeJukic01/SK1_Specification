@@ -10,9 +10,4 @@ public class TestSchedule extends Schedule {
         super(properties);
     }
 
-    @Override
-    public void loadScheduleFromFile(String path) {
-
-    }
-
 }

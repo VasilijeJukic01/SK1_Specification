@@ -1,7 +1,7 @@
 import com.raf.sk.specification.model.Appointment;
 import com.raf.sk.specification.model.Day;
 import com.raf.sk.specification.model.ScheduleRoom;
-import com.raf.sk.specification.model.ScheduleTime;
+import com.raf.sk.specification.model.time.ReservedTime;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -12,7 +12,7 @@ public class AppointmentTest {
     @Test
     public void custom_data_test() {
         ScheduleRoom room = new ScheduleRoom("RAF 20", 40);
-        ScheduleTime time = new ScheduleTime(10, 12, LocalDate.now());
+        ReservedTime time = new ReservedTime(10, 12, LocalDate.now());
         Appointment appointment = new Appointment(time, room);
         appointment.putData("Integer", 56);
         appointment.putData("String", "String");

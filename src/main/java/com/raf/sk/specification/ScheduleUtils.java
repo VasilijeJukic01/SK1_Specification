@@ -77,11 +77,24 @@ public class ScheduleUtils {
                 .collect(Collectors.toList());
     }
 
-    public List<Appointment> findAppointmentsByDate(LocalDate date, List<Appointment> appointments) {
+    public List<Appointment> findFreeAppointmentsByDate(LocalDate date, List<Appointment> appointments) {
+        return findAppointmentsByCriteria(a -> a.getTime().getDate().equals(date), appointments);
+    }
+
+    public List<Appointment> findReservedAppointmentsByDate(LocalDate date, List<Appointment> appointments) {
         return findAppointmentsByCriteria(a -> a.getTime().getStartDate().equals(date), appointments);
     }
 
-    public List<Appointment> findAppointmentsByDayAndPeriod(Day day, LocalDate startDate, LocalDate endDate, int startTime, int endTime, List<Appointment> appointments) {
+    public List<Appointment> findFreeAppointmentsByDayAndPeriod(Day day, LocalDate startDate, LocalDate endDate, int startTime, int endTime, List<Appointment> appointments) {
+        Predicate<Appointment> predicate = a -> a.getTime().getDay().equals(day)
+                && a.getTime().getDate().isBefore(endDate)
+                && a.getTime().getDate().isAfter(startDate)
+                && a.getTime().getStartTime() <= startTime
+                && a.getTime().getEndTime() >= endTime;
+        return findAppointmentsByCriteria(predicate, appointments);
+    }
+
+    public List<Appointment> findReservedAppointmentsByDayAndPeriod(Day day, LocalDate startDate, LocalDate endDate, int startTime, int endTime, List<Appointment> appointments) {
         Predicate<Appointment> predicate = a -> a.getTime().getDay().equals(day)
                 && a.getTime().getStartDate().isBefore(endDate)
                 && a.getTime().getEndDate().isAfter(startDate)
@@ -90,7 +103,15 @@ public class ScheduleUtils {
         return findAppointmentsByCriteria(predicate, appointments);
     }
 
-    public List<Appointment> findAppointmentsByDateTime(LocalDate startDate, LocalDate endDate, int startTime, int endTime, List<Appointment> appointments) {
+    public List<Appointment> findFreeAppointmentsByDateTime(LocalDate startDate, LocalDate endDate, int startTime, int endTime, List<Appointment> appointments) {
+        Predicate<Appointment> predicate = a -> a.getTime().getDate().isBefore(endDate)
+                && a.getTime().getDate().isAfter(startDate)
+                && a.getTime().getStartTime() <= startTime
+                && a.getTime().getEndTime() >= endTime;
+        return findAppointmentsByCriteria(predicate, appointments);
+    }
+
+    public List<Appointment> findReservedAppointmentsByDateTime(LocalDate startDate, LocalDate endDate, int startTime, int endTime, List<Appointment> appointments) {
         Predicate<Appointment> predicate = a -> a.getTime().getStartDate().isBefore(endDate)
                 && a.getTime().getEndDate().isAfter(startDate)
                 && a.getTime().getStartTime() <= startTime
@@ -98,7 +119,15 @@ public class ScheduleUtils {
         return findAppointmentsByCriteria(predicate, appointments);
     }
 
-    public List<Appointment> findAppointmentsByDateTimeDuration(LocalDate startDate, LocalDate endDate, int startTime, int duration, List<Appointment> appointments) {
+    public List<Appointment> findFreeAppointmentsByDateTimeDuration(LocalDate startDate, LocalDate endDate, int startTime, int duration, List<Appointment> appointments) {
+        Predicate<Appointment> predicate = a ->  a.getTime().getDate().isBefore(endDate)
+                && a.getTime().getDate().isAfter(startDate)
+                && a.getTime().getStartTime() <= startTime
+                && a.getTime().getEndTime() >= startTime + duration;
+        return findAppointmentsByCriteria(predicate, appointments);
+    }
+
+    public List<Appointment> findReservedAppointmentsByDateTimeDuration(LocalDate startDate, LocalDate endDate, int startTime, int duration, List<Appointment> appointments) {
         Predicate<Appointment> predicate = a ->  a.getTime().getStartDate().isBefore(endDate)
                 && a.getTime().getEndDate().isAfter(startDate)
                 && a.getTime().getStartTime() <= startTime

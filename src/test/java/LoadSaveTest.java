@@ -1,5 +1,6 @@
 import com.raf.sk.specification.Schedule;
 import com.raf.sk.specification.model.*;
+import com.raf.sk.specification.model.time.ReservedTime;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileInputStream;
@@ -13,9 +14,9 @@ public class LoadSaveTest {
     public void csv_export_test() throws IOException {
         Schedule schedule = new TestSchedule(getProperties());
 
-        ScheduleTime t1 = new ScheduleTime(8, 10, LocalDate.of(2023, 1, 2));
-        ScheduleTime t2 = new ScheduleTime(Day.THURSDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
-        ScheduleTime t3 = new ScheduleTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
+        ReservedTime t1 = new ReservedTime(8, 10, LocalDate.of(2023, 1, 2));
+        ReservedTime t2 = new ReservedTime(Day.THURSDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
+        ReservedTime t3 = new ReservedTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
 
         ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
 
