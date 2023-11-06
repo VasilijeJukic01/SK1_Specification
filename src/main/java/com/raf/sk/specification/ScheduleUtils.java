@@ -163,34 +163,38 @@ public class ScheduleUtils {
         String[] columns = column.split(",");
 
         try (CSVWriter writer = new CSVWriter(new FileWriter(path))) {
-
             if (header.equals("ON")) {
                 writer.writeNext(columns);
             }
-            for (Appointment appointment : appointments) {
-                List<String> values = new ArrayList<>(Arrays.asList(
-                        appointment.getScheduleRoom().getName(),
-                        String.valueOf(appointment.getTime().getDay()),
-                        String.valueOf(appointment.getTime().getStartTime()),
-                        String.valueOf(appointment.getTime().getEndTime())
-                ));
+            String col = column;
+            appointments.stream()
+                    .map(appointment -> getCSVValues(appointment, col))
+                    .forEach(values -> writer.writeNext(values.toArray(new String[0])));
+        }
+    }
 
-                if (column.contains("START_DATE")) {
-                    values.add(String.valueOf(appointment.getTime().getStartDate()));
-                }
-                if (column.contains("END_DATE")) {
-                    values.add(String.valueOf(appointment.getTime().getEndDate()));
-                }
+    private List<String> getCSVValues(Appointment appointment, String column) {
+        List<String> values = new ArrayList<>(Arrays.asList(
+                appointment.getScheduleRoom().getName(),
+                String.valueOf(appointment.getTime().getDay()),
+                String.valueOf(appointment.getTime().getStartTime()),
+                String.valueOf(appointment.getTime().getEndTime())
+        ));
 
-                for (String s : appointment.getAllData().keySet()) {
-                    if (column.contains(s.toUpperCase())) {
-                        values.add(String.valueOf(appointment.getAllData().get(s)));
-                    }
-                }
+        if (column.contains("START_DATE")) {
+            values.add(String.valueOf(appointment.getTime().getStartDate()));
+        }
+        if (column.contains("END_DATE")) {
+            values.add(String.valueOf(appointment.getTime().getEndDate()));
+        }
 
-                writer.writeNext(values.toArray(new String[0]));
+        for (String s : appointment.getAllData().keySet()) {
+            if (column.contains(s.toUpperCase())) {
+                values.add(String.valueOf(appointment.getAllData().get(s)));
             }
         }
+
+        return values;
     }
 
     public void saveToJSON(List<Appointment> appointments, String path, Properties properties) throws IOException {

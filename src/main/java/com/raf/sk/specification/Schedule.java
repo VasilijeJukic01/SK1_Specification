@@ -66,20 +66,22 @@ public abstract class Schedule {
         String[] holidays = holidaysData.split(",");
         String[] equipment = equipmentData.split(",");
 
-        initFreeRooms(scheduleRooms, freeDays, holidays, startTime, endTime, startDate, endDate, equipment);
+        initializeFreeAppointments(scheduleRooms, freeDays, holidays, startTime, endTime, startDate, endDate, equipment);
     }
 
-    private void initFreeRooms(String[] scheduleRooms, String[] freeDays, String[] holidays, int startTime, int endTime, LocalDate startDate, LocalDate endDate, String[] equipment) {
+    private void initializeFreeAppointments(String[] scheduleRooms, String[] freeDays, String[] holidays, int startTime, int endTime, LocalDate startDate, LocalDate endDate, String[] equipment) {
         Arrays.stream(scheduleRooms).forEach(room -> initFreeRoom(room, freeDays, holidays, startTime, endTime, startDate, endDate, equipment));
     }
 
     private void initFreeRoom(String room, String[] freeDays, String[] holidays, int startTime, int endTime, LocalDate startDate, LocalDate endDate, String[] equipment) {
         String[] roomInfo = room.split("-");
         ScheduleRoom scheduleRoom = new ScheduleRoom(roomInfo[0], Integer.parseInt(roomInfo[1]));
-        for (String s : equipment) {
-            String[] data = s.split("-");
-            if (data[0].equals(roomInfo[0])) scheduleRoom.addEquipment(new Equipment(data[1], Integer.parseInt(data[2])));
-        }
+
+        Arrays.stream(equipment)
+                .map(s -> s.split("-"))
+                .filter(data -> data[0].equals(roomInfo[0]))
+                .forEach(data -> scheduleRoom.addEquipment(new Equipment(data[1], Integer.parseInt(data[2]))));
+
         rooms.add(scheduleRoom);
 
         LocalDate currentDate = startDate;

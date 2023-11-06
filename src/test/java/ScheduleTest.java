@@ -44,7 +44,7 @@ public class ScheduleTest {
         Assertions.assertTrue(reservedAppointments.isEmpty());
 
         ReservedTime t1 = new ReservedTime(8, 10, LocalDate.of(2023, 1, 1));
-        ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
+        ScheduleRoom r1 = schedule.getRoomByName("RAF1");
         Appointment a1 = new Appointment(t1, r1);
 
         schedule.addAppointment(a1);
@@ -65,7 +65,7 @@ public class ScheduleTest {
         ReservedTime t4 = new ReservedTime(Day.MONDAY, 8, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
         ReservedTime t5 = new ReservedTime(Day.MONDAY, 9, 13, LocalDate.of(2023, 1, 2), LocalDate.of(2023, 1, 8));
 
-        ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
+        ScheduleRoom r1 = schedule.getRoomByName("RAF1");
 
         Appointment a1 = new Appointment(t1, r1);
         Appointment a2 = new Appointment(t2, r1);
@@ -91,7 +91,7 @@ public class ScheduleTest {
         ReservedTime t4 = new ReservedTime(Day.MONDAY, 9, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
         ReservedTime t5 = new ReservedTime(Day.WEDNESDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
 
-        ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
+        ScheduleRoom r1 = schedule.getRoomByName("RAF1");
 
         Appointment a1 = new Appointment(t1, r1);
         Appointment a2 = new Appointment(t2, r1);
@@ -125,7 +125,7 @@ public class ScheduleTest {
         ReservedTime t4 = new ReservedTime(Day.THURSDAY, 19, 21, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 10));
         ReservedTime t5 = new ReservedTime(Day.THURSDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
 
-        ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
+        ScheduleRoom r1 = schedule.getRoomByName("RAF1");
 
         Appointment a1 = new Appointment(t1, r1);
         Appointment a2 = new Appointment(t2, r1);
@@ -143,7 +143,7 @@ public class ScheduleTest {
         List<Appointment> reservedAppointments = schedule.getReservedAppointments();
 
         for (Appointment appointment : freeAppointments) {
-            if (appointment.getScheduleRoom().getName().equals("RAF1"))
+            if (appointment.getScheduleRoom().getName().equals("RAF1") && appointment.getTime().getDay().equals(Day.THURSDAY))
                 System.out.println(appointment.getTime()+" "+appointment.getScheduleRoom().getName());
         }
 
@@ -165,7 +165,7 @@ public class ScheduleTest {
         ReservedTime t4 = new ReservedTime(Day.MONDAY, 9, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
         ReservedTime t5 = new ReservedTime(Day.WEDNESDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
 
-        ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
+        ScheduleRoom r1 = schedule.getRoomByName("RAF1");
 
         Appointment a1 = new Appointment(t1, r1);
         Appointment a2 = new Appointment(t2, r1);
@@ -219,7 +219,7 @@ public class ScheduleTest {
         ReservedTime t4 = new ReservedTime(Day.MONDAY, 9, 12, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 1, 4));
         ReservedTime t5 = new ReservedTime(Day.WEDNESDAY, 12, 13, LocalDate.of(2023, 12, 5), LocalDate.of(2023, 12, 8));
 
-        ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
+        ScheduleRoom r1 = schedule.getRoomByName("RAF1");
 
         Appointment a1 = new Appointment(t1, r1);
         Appointment a2 = new Appointment(t2, r1);
@@ -236,13 +236,13 @@ public class ScheduleTest {
         Assertions.assertEquals(3, appointmentsByDate.size());
 
         List<Appointment> appointmentsByDayAndPeriod = schedule.findFreeAppointmentsByDayAndPeriod(Day.THURSDAY, LocalDate.of(2023, 1, 1), LocalDate.of(2023, 12, 31), 10, 15);
-        Assertions.assertEquals(154, appointmentsByDayAndPeriod.size());
+        Assertions.assertEquals(148, appointmentsByDayAndPeriod.size());
 
         List<Appointment> appointmentsByDateTime = schedule.findFreeAppointmentsByDateTime(LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12), 10, 15);
-        Assertions.assertEquals(23, appointmentsByDateTime.size());
+        Assertions.assertEquals(17, appointmentsByDateTime.size());
 
         List<Appointment> appointmentsByRoom = schedule.findFreeAppointmentsByRoom(r1);
-        Assertions.assertEquals(366, appointmentsByRoom.size());
+        Assertions.assertEquals(254, appointmentsByRoom.size());
     }
 
     private Properties getProperties() {

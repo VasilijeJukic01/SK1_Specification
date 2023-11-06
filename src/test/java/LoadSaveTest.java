@@ -18,7 +18,7 @@ public class LoadSaveTest {
         ReservedTime t2 = new ReservedTime(Day.THURSDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
         ReservedTime t3 = new ReservedTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
 
-        ScheduleRoom r1 = new ScheduleRoom("RAF1", 15);
+        ScheduleRoom r1 = schedule.getRoomByName("RAF1");
 
         Appointment a1 = new Appointment(t1, r1);
         Appointment a2 = new Appointment(t2, r1);
