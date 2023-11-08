@@ -32,6 +32,18 @@ public class LoadSaveTest {
 
     }
 
+    @Test
+    public void csv_import_test() throws IOException {
+        Schedule schedule = new TestSchedule(getProperties());
+
+        schedule.loadScheduleFromFile("src/test/resources/test.csv", getProperties());
+
+        for (Appointment appointment : schedule.getFreeAppointments()) {
+            if (appointment.getScheduleRoom().getName().equals("RAF1") && appointment.getTime().getDay().equals(Day.MONDAY))
+                System.out.println(appointment.getTime()+" "+appointment.getScheduleRoom().getName());
+        }
+    }
+
     private Properties getProperties() {
         try (FileInputStream fileInputStream = new FileInputStream("src/test/resources/test.config")) {
             Properties properties = new Properties();

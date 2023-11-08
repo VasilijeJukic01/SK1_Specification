@@ -118,7 +118,7 @@ public class ReservedTime implements Time<LocalDate> {
 
     @Override
     public String toString() {
-        return "ScheduleTime{" +
+        return "ReservedTime{" +
                 "day=" + day +
                 ", startTime=" + startTime +
                 ", endTime=" + endTime +

@@ -9,8 +9,8 @@ import java.util.*;
  */
 public class ScheduleRoom extends ScheduleObject {
 
-    private String name;
-    private int capacity;
+    private final String name;
+    private final int capacity;
     private List<Equipment> equipment = new ArrayList<>();
 
     public ScheduleRoom(String name, int capacity) {
@@ -42,18 +42,6 @@ public class ScheduleRoom extends ScheduleObject {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getCapacity() {
-        return capacity;
-    }
-
-    public void setCapacity(int capacity) {
-        this.capacity = capacity;
-    }
-
     public List<Equipment> getEquipment() {
         return Collections.unmodifiableList(equipment);
     }
@@ -67,7 +55,7 @@ public class ScheduleRoom extends ScheduleObject {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ScheduleRoom that = (ScheduleRoom) o;
-        return capacity == that.capacity && Objects.equals(name, that.name) && Objects.equals(equipment, that.equipment);
+        return Objects.equals(name, that.name);
     }
 
 }

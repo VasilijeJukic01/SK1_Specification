@@ -14,8 +14,8 @@ import java.util.Map;
  */
 public class Appointment extends ScheduleObject {
 
-    private Time<LocalDate> time;
-    private ScheduleRoom scheduleRoom;
+    private final Time<LocalDate> time;
+    private final ScheduleRoom scheduleRoom;
 
     public Appointment(Time<LocalDate> time, ScheduleRoom scheduleRoom) {
         super.data = new HashMap<>();
@@ -38,11 +38,4 @@ public class Appointment extends ScheduleObject {
         return scheduleRoom;
     }
 
-    public void setTime(Time<LocalDate> time) {
-        this.time = time;
-    }
-
-    public void setScheduleRoom(ScheduleRoom scheduleRoom) {
-        this.scheduleRoom = scheduleRoom;
-    }
 }
