@@ -13,13 +13,13 @@ public interface Time<D> {
 
     void setDay(Day day);
 
-    int getStartTime();
+    String getStartTime();
 
-    void setStartTime(int startTime);
+    void setStartTime(String startTime);
 
-    int getEndTime();
+    String getEndTime();
 
-    void setEndTime(int endTime);
+    void setEndTime(String endTime);
 
     D getStartDate();
 

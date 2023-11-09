@@ -12,7 +12,7 @@ public class AppointmentTest {
     @Test
     public void custom_data_test() {
         ScheduleRoom room = new ScheduleRoom("RAF 20", 40);
-        ReservedTime time = new ReservedTime(10, 12, LocalDate.now());
+        ReservedTime time = new ReservedTime("10:00", "12:00", LocalDate.now());
         Appointment appointment = new Appointment(time, room);
         appointment.putData("Integer", 56);
         appointment.putData("String", "String");

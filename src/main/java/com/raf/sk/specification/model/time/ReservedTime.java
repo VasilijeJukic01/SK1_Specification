@@ -13,8 +13,6 @@ import java.util.Objects;
  * It contains the day, the start and end time, and the start and end date.
  * <p>
  * This class implements the {@link Time} interface.
- * <p>
- * This class is immutable.
  *
  * @see Time
  * @see Day
@@ -22,11 +20,11 @@ import java.util.Objects;
 public class ReservedTime implements Time<LocalDate> {
 
     private Day day;
-    private int startTime, endTime;
+    private String startTime, endTime;
     private LocalDate startDate;
     private LocalDate endDate;
 
-    public ReservedTime(Day day, int startTime, int endTime, LocalDate startDate, LocalDate endDate) {
+    public ReservedTime(Day day, String startTime, String endTime, LocalDate startDate, LocalDate endDate) {
         this.day = day;
         this.startTime = startTime;
         this.endTime = endTime;
@@ -34,7 +32,7 @@ public class ReservedTime implements Time<LocalDate> {
         this.endDate = endDate;
     }
 
-    public ReservedTime(int startTime, int endTime, LocalDate date) {
+    public ReservedTime(String startTime, String endTime, LocalDate date) {
         this.day = ScheduleUtils.getInstance().getDayFromDate(date);
         this.startTime = startTime;
         this.endTime = endTime;
@@ -53,22 +51,22 @@ public class ReservedTime implements Time<LocalDate> {
     }
 
     @Override
-    public int getStartTime() {
+    public String getStartTime() {
         return startTime;
     }
 
     @Override
-    public void setStartTime(int startTime) {
+    public void setStartTime(String startTime) {
         this.startTime = startTime;
     }
 
     @Override
-    public int getEndTime() {
+    public String getEndTime() {
         return endTime;
     }
 
     @Override
-    public void setEndTime(int endTime) {
+    public void setEndTime(String endTime) {
         this.endTime = endTime;
     }
 
@@ -113,7 +111,7 @@ public class ReservedTime implements Time<LocalDate> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ReservedTime that = (ReservedTime) o;
-        return startTime == that.startTime && endTime == that.endTime && day == that.day && Objects.equals(startDate, that.startDate) && Objects.equals(endDate, that.endDate);
+        return Objects.equals(startTime, that.startTime) && Objects.equals(endTime, that.endTime) && day == that.day && Objects.equals(startDate, that.startDate) && Objects.equals(endDate, that.endDate);
     }
 
     @Override

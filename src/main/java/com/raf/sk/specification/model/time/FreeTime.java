@@ -21,10 +21,10 @@ import java.util.Objects;
 public class FreeTime implements Time<LocalDate> {
 
     private Day day;
-    private int startTime, endTime;
+    private String startTime, endTime;
     private LocalDate date;
 
-    public FreeTime(Day day, int startTime, int endTime, LocalDate startDate) {
+    public FreeTime(Day day, String startTime, String endTime, LocalDate startDate) {
         this.day = day;
         this.startTime = startTime;
         this.endTime = endTime;
@@ -42,22 +42,22 @@ public class FreeTime implements Time<LocalDate> {
     }
 
     @Override
-    public int getStartTime() {
+    public String getStartTime() {
         return startTime;
     }
 
     @Override
-    public void setStartTime(int startTime) {
+    public void setStartTime(String startTime) {
         this.startTime = startTime;
     }
 
     @Override
-    public int getEndTime() {
+    public String getEndTime() {
         return endTime;
     }
 
     @Override
-    public void setEndTime(int endTime) {
+    public void setEndTime(String endTime) {
         this.endTime = endTime;
     }
 
@@ -108,7 +108,7 @@ public class FreeTime implements Time<LocalDate> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FreeTime that = (FreeTime) o;
-        return startTime == that.startTime && endTime == that.endTime && day == that.day && Objects.equals(date, that.date);
+        return Objects.equals(startTime, that.startTime) && Objects.equals(endTime, that.endTime) && day == that.day && Objects.equals(date, that.date);
     }
 
     @Override

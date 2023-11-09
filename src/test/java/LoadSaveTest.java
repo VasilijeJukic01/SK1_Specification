@@ -14,11 +14,11 @@ public class LoadSaveTest {
     public void csv_export_test() throws IOException {
         Schedule schedule = new TestSchedule(getProperties());
 
-        ReservedTime t1 = new ReservedTime(8, 10, LocalDate.of(2023, 1, 2));
-        ReservedTime t2 = new ReservedTime(Day.THURSDAY, 8, 10, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
-        ReservedTime t3 = new ReservedTime(Day.THURSDAY, 10, 15, LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
+        ReservedTime t1 = new ReservedTime("8:00", "10:00", LocalDate.of(2023, 1, 2));
+        ReservedTime t2 = new ReservedTime(Day.THURSDAY, "8:00", "10:00", LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 13));
+        ReservedTime t3 = new ReservedTime(Day.THURSDAY, "10:00", "15:00", LocalDate.of(2023, 1, 3), LocalDate.of(2023, 1, 12));
 
-        ScheduleRoom r1 = schedule.getRoomByName("RAF1");
+        ScheduleRoom r1 = schedule.getRoomByName("Raf04 (u)");
 
         Appointment a1 = new Appointment(t1, r1);
         Appointment a2 = new Appointment(t2, r1);
@@ -28,7 +28,7 @@ public class LoadSaveTest {
         schedule.addAppointment(a2);
         schedule.addAppointment(a3);
 
-        schedule.saveScheduleToFile("src/test/resources/test.csv", "CSV", getProperties());
+        schedule.saveScheduleToFile("src/test/resources/test.json", "JSON", getProperties());
 
     }
 
@@ -36,12 +36,13 @@ public class LoadSaveTest {
     public void csv_import_test() throws IOException {
         Schedule schedule = new TestSchedule(getProperties());
 
-        schedule.loadScheduleFromFile("src/test/resources/test.csv", getProperties());
+        schedule.loadScheduleFromFile("src/test/resources/sraf.csv", getProperties());
 
-        for (Appointment appointment : schedule.getFreeAppointments()) {
-            if (appointment.getScheduleRoom().getName().equals("RAF1") && appointment.getTime().getDay().equals(Day.MONDAY))
-                System.out.println(appointment.getTime()+" "+appointment.getScheduleRoom().getName());
+        System.out.println("Appointments:");
+        for (Appointment freeAppointment : schedule.getFreeAppointments()) {
+            System.out.println(freeAppointment);
         }
+
     }
 
     private Properties getProperties() {

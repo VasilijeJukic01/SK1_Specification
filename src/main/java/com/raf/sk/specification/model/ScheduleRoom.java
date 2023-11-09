@@ -42,6 +42,10 @@ public class ScheduleRoom extends ScheduleObject {
         return name;
     }
 
+    public int getCapacity() {
+        return capacity;
+    }
+
     public List<Equipment> getEquipment() {
         return Collections.unmodifiableList(equipment);
     }
@@ -58,4 +62,12 @@ public class ScheduleRoom extends ScheduleObject {
         return Objects.equals(name, that.name);
     }
 
+    @Override
+    public String toString() {
+        return "ScheduleRoom{" +
+                "name='" + name + '\'' +
+                ", capacity=" + capacity +
+                ", equipment=" + equipment +
+                '}';
+    }
 }

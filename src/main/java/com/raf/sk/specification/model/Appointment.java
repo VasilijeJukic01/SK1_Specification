@@ -38,4 +38,12 @@ public class Appointment extends ScheduleObject {
         return scheduleRoom;
     }
 
+    @Override
+    public String toString() {
+        return "Appointment{" +
+                "data=" + data +
+                ", time=" + time +
+                ", scheduleRoom=" + scheduleRoom.getName() +
+                '}';
+    }
 }

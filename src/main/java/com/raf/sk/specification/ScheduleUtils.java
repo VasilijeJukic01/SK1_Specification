@@ -1,12 +1,14 @@
 package com.raf.sk.specification;
 
-import com.opencsv.CSVReader;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.opencsv.CSVWriter;
 import com.raf.sk.specification.model.Appointment;
 import com.raf.sk.specification.model.Day;
 import com.raf.sk.specification.model.ScheduleRoom;
-import com.raf.sk.specification.model.time.FreeTime;
 import com.raf.sk.specification.model.time.ReservedTime;
+import com.raf.sk.specification.model.time.Time;
+import com.raf.sk.specification.model.time.TimeAdapter;
 
 import java.io.*;
 import java.time.LocalDate;
@@ -35,6 +37,18 @@ public class ScheduleUtils {
         return Day.values()[date.getDayOfWeek().getValue() - 1];
     }
 
+    private String timeAddition(String time, String duration) {
+        String[] timeSplit = time.split(":");
+        String[] durationSplit = duration.split(":");
+        int hours = Integer.parseInt(timeSplit[0]) + Integer.parseInt(durationSplit[0]);
+        int minutes = Integer.parseInt(timeSplit[1]) + Integer.parseInt(durationSplit[1]);
+        if (minutes >= 60) {
+            hours++;
+            minutes -= 60;
+        }
+        return String.format("%02d:%02d", hours, minutes);
+    }
+
     // Appointment date checkers
     public boolean areTwoAppointmentsHaveSameDate(Appointment a1, Appointment a2) {
         return a1.getTime().getStartDate().equals(a2.getTime().getStartDate()) && a1.getTime().getEndDate().equals(a2.getTime().getEndDate());
@@ -58,19 +72,41 @@ public class ScheduleUtils {
 
     // Appointment time checkers
     public boolean areTwoAppointmentsHaveSameTime(Appointment a1, Appointment a2) {
-        return a1.getTime().getStartTime() == a2.getTime().getStartTime() && a1.getTime().getEndTime() == a2.getTime().getEndTime();
+        return a1.getTime().getStartTime().equals(a2.getTime().getStartTime()) && a1.getTime().getEndTime().equals(a2.getTime().getEndTime());
     }
 
     public boolean areTwoAppointmentsHaveSameStartTime(Appointment a1, Appointment a2) {
-        return a1.getTime().getStartTime() == a2.getTime().getStartTime();
+        return a1.getTime().getStartTime().equals(a2.getTime().getStartTime());
     }
 
     public boolean areTwoAppointmentsHaveSameEndTime(Appointment a1, Appointment a2) {
-        return a1.getTime().getEndTime() == a2.getTime().getEndTime();
+        return a1.getTime().getEndTime().equals(a2.getTime().getEndTime());
     }
 
+    // TODO: Refactor
     public boolean isOneAppointmentTimeContainsAnother(Appointment a1, Appointment a2) {
-        return a1.getTime().getStartTime() < a2.getTime().getStartTime() && a1.getTime().getEndTime() > a2.getTime().getEndTime();
+        String[] a1Start = a1.getTime().getStartTime().split(":");
+        String[] a1End = a1.getTime().getEndTime().split(":");
+        String[] a2Start = a2.getTime().getStartTime().split(":");
+        String[] a2End = a2.getTime().getEndTime().split(":");
+        int a1StartHours = Integer.parseInt(a1Start[0]);
+        int a1StartMinutes = a1Start.length == 2 ? Integer.parseInt(a1Start[1]) : 0;
+        int a1EndHours = Integer.parseInt(a1End[0]);
+        int a1EndMinutes = a1End.length == 2 ? Integer.parseInt(a1End[1]) : 0;
+        int a2StartHours = a2Start.length == 2 ? Integer.parseInt(a2Start[0]) : 0;
+        int a2StartMinutes = Integer.parseInt(a2Start[1]);
+        int a2EndHours = Integer.parseInt(a2End[0]);
+        int a2EndMinutes = a2End.length == 2 ? Integer.parseInt(a2End[1]) : 0;
+
+        if (a1StartHours < a2StartHours && a1EndHours > a2EndHours) return true;
+        else if (a1StartHours == a2StartHours && a1StartMinutes <= a2StartMinutes && a1EndHours > a2EndHours) return true;
+        else if (a1StartHours < a2StartHours && a1EndHours == a2EndHours && a1EndMinutes >= a2EndMinutes) return true;
+        return (a1StartHours == a2StartHours && a1StartMinutes <= a2StartMinutes && a1EndHours == a2EndHours && a1EndMinutes >= a2EndMinutes);
+    }
+
+    private boolean isOneTimeContainsAnother(Appointment a, String startTime, String endTime) {
+        ReservedTime time = new ReservedTime(null, startTime, endTime, null, null);
+        return isOneAppointmentTimeContainsAnother(a, new Appointment(time, null));
     }
 
     // Appointment Operations
@@ -88,53 +124,47 @@ public class ScheduleUtils {
         return findAppointmentsByCriteria(a -> a.getTime().getStartDate().equals(date), appointments);
     }
 
-    public List<Appointment> findFreeAppointmentsByDayAndPeriod(Day day, LocalDate startDate, LocalDate endDate, int startTime, int endTime, List<Appointment> appointments) {
+    public List<Appointment> findFreeAppointmentsByDayAndPeriod(Day day, LocalDate startDate, LocalDate endDate, String startTime, String endTime, List<Appointment> appointments) {
         Predicate<Appointment> predicate = a -> a.getTime().getDay().equals(day)
                 && a.getTime().getDate().isBefore(endDate)
                 && a.getTime().getDate().isAfter(startDate)
-                && a.getTime().getStartTime() <= startTime
-                && a.getTime().getEndTime() >= endTime;
+                && isOneTimeContainsAnother(a, String.valueOf(startTime), String.valueOf(endTime));
         return findAppointmentsByCriteria(predicate, appointments);
     }
 
-    public List<Appointment> findReservedAppointmentsByDayAndPeriod(Day day, LocalDate startDate, LocalDate endDate, int startTime, int endTime, List<Appointment> appointments) {
+    public List<Appointment> findReservedAppointmentsByDayAndPeriod(Day day, LocalDate startDate, LocalDate endDate, String startTime, String endTime, List<Appointment> appointments) {
         Predicate<Appointment> predicate = a -> a.getTime().getDay().equals(day)
                 && a.getTime().getStartDate().isBefore(endDate)
                 && a.getTime().getEndDate().isAfter(startDate)
-                && a.getTime().getStartTime() <= startTime
-                && a.getTime().getEndTime() >= endTime;
+                && isOneTimeContainsAnother(a, String.valueOf(startTime), String.valueOf(endTime));
         return findAppointmentsByCriteria(predicate, appointments);
     }
 
-    public List<Appointment> findFreeAppointmentsByDateTime(LocalDate startDate, LocalDate endDate, int startTime, int endTime, List<Appointment> appointments) {
+    public List<Appointment> findFreeAppointmentsByDateTime(LocalDate startDate, LocalDate endDate, String startTime, String endTime, List<Appointment> appointments) {
         Predicate<Appointment> predicate = a -> a.getTime().getDate().isBefore(endDate)
                 && a.getTime().getDate().isAfter(startDate)
-                && a.getTime().getStartTime() <= startTime
-                && a.getTime().getEndTime() >= endTime;
+                && isOneTimeContainsAnother(a, String.valueOf(startTime), String.valueOf(endTime));
         return findAppointmentsByCriteria(predicate, appointments);
     }
 
-    public List<Appointment> findReservedAppointmentsByDateTime(LocalDate startDate, LocalDate endDate, int startTime, int endTime, List<Appointment> appointments) {
+    public List<Appointment> findReservedAppointmentsByDateTime(LocalDate startDate, LocalDate endDate, String startTime, String endTime, List<Appointment> appointments) {
         Predicate<Appointment> predicate = a -> a.getTime().getStartDate().isBefore(endDate)
                 && a.getTime().getEndDate().isAfter(startDate)
-                && a.getTime().getStartTime() <= startTime
-                && a.getTime().getEndTime() >= endTime;
+                && isOneTimeContainsAnother(a, String.valueOf(startTime), String.valueOf(endTime));
         return findAppointmentsByCriteria(predicate, appointments);
     }
 
-    public List<Appointment> findFreeAppointmentsByDateTimeDuration(LocalDate startDate, LocalDate endDate, int startTime, int duration, List<Appointment> appointments) {
+    public List<Appointment> findFreeAppointmentsByDateTimeDuration(LocalDate startDate, LocalDate endDate, String startTime, String duration, List<Appointment> appointments) {
         Predicate<Appointment> predicate = a ->  a.getTime().getDate().isBefore(endDate)
                 && a.getTime().getDate().isAfter(startDate)
-                && a.getTime().getStartTime() <= startTime
-                && a.getTime().getEndTime() >= startTime + duration;
+                && isOneTimeContainsAnother(a, String.valueOf(startTime), timeAddition(startTime, duration));
         return findAppointmentsByCriteria(predicate, appointments);
     }
 
-    public List<Appointment> findReservedAppointmentsByDateTimeDuration(LocalDate startDate, LocalDate endDate, int startTime, int duration, List<Appointment> appointments) {
+    public List<Appointment> findReservedAppointmentsByDateTimeDuration(LocalDate startDate, LocalDate endDate, String startTime, String duration, List<Appointment> appointments) {
         Predicate<Appointment> predicate = a ->  a.getTime().getStartDate().isBefore(endDate)
                 && a.getTime().getEndDate().isAfter(startDate)
-                && a.getTime().getStartTime() <= startTime
-                && a.getTime().getEndTime() >= startTime + duration;
+                && isOneTimeContainsAnother(a, String.valueOf(startTime), timeAddition(startTime, duration));
         return findAppointmentsByCriteria(predicate, appointments);
     }
 
@@ -171,27 +201,27 @@ public class ScheduleUtils {
             if (header.equals("ON")) {
                 writer.writeNext(columns);
             }
-            String col = column;
+            String h = column;
             appointments.stream()
-                    .map(appointment -> getCSVValues(appointment, col))
+                    .map(appointment -> getCSVValues(appointment, h))
                     .forEach(values -> writer.writeNext(values.toArray(new String[0])));
         }
     }
 
-    private List<String> getCSVValues(Appointment appointment, String column) {
+    private List<String> getCSVValues(Appointment appointment, String header) {
         List<String> values = new ArrayList<>();
 
-        if (column.contains("START_DATE")) {
+        if (header.contains("START_DATE")) {
             values.add(String.valueOf(appointment.getTime().getStartDate()));
         }
-        if (column.contains("END_DATE")) {
+        if (header.contains("END_DATE")) {
             values.add(String.valueOf(appointment.getTime().getEndDate()));
         }
 
         appointment.getAllData().keySet().stream()
-                .filter(s -> column.toUpperCase().contains(s.toUpperCase()))
                 .map(s -> String.valueOf(appointment.getAllData().get(s)))
                 .forEach(values::add);
+
 
         values.addAll(Arrays.asList(
                 String.valueOf(appointment.getTime().getDay()),
@@ -203,7 +233,13 @@ public class ScheduleUtils {
     }
 
     public void saveToJSON(List<Appointment> appointments, String path, Properties properties) throws IOException {
-
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(Time.class, new TimeAdapter())
+                .create();
+        try (FileWriter writer = new FileWriter(path)) {
+            gson.toJson(appointments, writer);
+        }
+        catch (Exception ignored) {}
     }
 
 }
