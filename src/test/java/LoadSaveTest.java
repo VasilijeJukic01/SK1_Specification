@@ -35,14 +35,11 @@ public class LoadSaveTest {
     @Test
     public void csv_import_test() throws IOException {
         Schedule schedule = new TestSchedule(getProperties());
-
-        schedule.loadScheduleFromFile("src/test/resources/sraf.csv", getProperties());
-
+        schedule.loadScheduleFromFile("src/test/resources/krasno.json", getProperties());
         System.out.println("Appointments:");
-        for (Appointment freeAppointment : schedule.getFreeAppointments()) {
-            System.out.println(freeAppointment);
+        for (Appointment a : schedule.getReservedAppointments()) {
+            System.out.println(a);
         }
-
     }
 
     private Properties getProperties() {

@@ -8,7 +8,7 @@ import com.raf.sk.specification.model.Day;
 import com.raf.sk.specification.model.ScheduleRoom;
 import com.raf.sk.specification.model.time.ReservedTime;
 import com.raf.sk.specification.model.time.Time;
-import com.raf.sk.specification.model.time.TimeAdapter;
+import com.raf.sk.specification.model.adapter.TimeAdapter;
 
 import java.io.*;
 import java.time.LocalDate;
@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 /**
  * Utility class for schedule operations.
  */
+@SuppressWarnings("unused")
 public class ScheduleUtils {
 
     private static volatile ScheduleUtils instance;
@@ -47,6 +48,13 @@ public class ScheduleUtils {
             minutes -= 60;
         }
         return String.format("%02d:%02d", hours, minutes);
+    }
+
+    public int[] getTimeComponents(String time) {
+        String[] timeParts = time.split(":");
+        int hours = Integer.parseInt(timeParts[0]);
+        int minutes = (timeParts.length == 2) ? Integer.parseInt(timeParts[1]) : 0;
+        return new int[]{hours, minutes};
     }
 
     // Appointment date checkers
@@ -83,25 +91,16 @@ public class ScheduleUtils {
         return a1.getTime().getEndTime().equals(a2.getTime().getEndTime());
     }
 
-    // TODO: Refactor
     public boolean isOneAppointmentTimeContainsAnother(Appointment a1, Appointment a2) {
-        String[] a1Start = a1.getTime().getStartTime().split(":");
-        String[] a1End = a1.getTime().getEndTime().split(":");
-        String[] a2Start = a2.getTime().getStartTime().split(":");
-        String[] a2End = a2.getTime().getEndTime().split(":");
-        int a1StartHours = Integer.parseInt(a1Start[0]);
-        int a1StartMinutes = a1Start.length == 2 ? Integer.parseInt(a1Start[1]) : 0;
-        int a1EndHours = Integer.parseInt(a1End[0]);
-        int a1EndMinutes = a1End.length == 2 ? Integer.parseInt(a1End[1]) : 0;
-        int a2StartHours = a2Start.length == 2 ? Integer.parseInt(a2Start[0]) : 0;
-        int a2StartMinutes = Integer.parseInt(a2Start[1]);
-        int a2EndHours = Integer.parseInt(a2End[0]);
-        int a2EndMinutes = a2End.length == 2 ? Integer.parseInt(a2End[1]) : 0;
+        int[] a1Start = getTimeComponents(a1.getTime().getStartTime());
+        int[] a1End = getTimeComponents(a1.getTime().getEndTime());
+        int[] a2Start = getTimeComponents(a2.getTime().getStartTime());
+        int[] a2End = getTimeComponents(a2.getTime().getEndTime());
 
-        if (a1StartHours < a2StartHours && a1EndHours > a2EndHours) return true;
-        else if (a1StartHours == a2StartHours && a1StartMinutes <= a2StartMinutes && a1EndHours > a2EndHours) return true;
-        else if (a1StartHours < a2StartHours && a1EndHours == a2EndHours && a1EndMinutes >= a2EndMinutes) return true;
-        return (a1StartHours == a2StartHours && a1StartMinutes <= a2StartMinutes && a1EndHours == a2EndHours && a1EndMinutes >= a2EndMinutes);
+        if (a1Start[0] < a2Start[0] && a1End[0] > a2End[0]) return true;
+        else if (a1Start[0] == a2Start[0] && a1Start[1] <= a2Start[1] && a1End[0] > a2End[0]) return true;
+        else if (a1Start[0] < a2Start[0] && a1End[0] == a2End[0] && a1End[1] >= a2End[1]) return true;
+        return (a1Start[0] == a2Start[0] && a1Start[1] <= a2Start[1] && a1End[0] == a2End[0] && a1End[1] >= a2End[1]);
     }
 
     private boolean isOneTimeContainsAnother(Appointment a, String startTime, String endTime) {
@@ -232,7 +231,7 @@ public class ScheduleUtils {
         return values;
     }
 
-    public void saveToJSON(List<Appointment> appointments, String path, Properties properties) throws IOException {
+    public void saveToJSON(List<Appointment> appointments, String path, Properties properties) {
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(Time.class, new TimeAdapter())
                 .create();

@@ -117,7 +117,7 @@ public class FreeTime implements Time<LocalDate> {
                 "day=" + day +
                 ", startTime=" + startTime +
                 ", endTime=" + endTime +
-                ", startDate=" + date +
+                ", date=" + date +
                 '}';
     }
 

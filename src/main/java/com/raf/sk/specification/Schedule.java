@@ -1,11 +1,15 @@
 package com.raf.sk.specification;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.opencsv.CSVReader;
 import com.raf.sk.specification.exception.*;
 import com.raf.sk.specification.model.*;
 import com.raf.sk.specification.model.time.FreeTime;
 import com.raf.sk.specification.model.time.ReservedTime;
 import com.raf.sk.specification.model.time.Time;
+import com.raf.sk.specification.model.adapter.TimeAdapter;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -21,6 +25,7 @@ import java.util.stream.Collectors;
  * The schedule can be loaded from and saved to various file formats.
  *
  */
+@SuppressWarnings("unused")
 public abstract class Schedule {
 
     private List<Appointment> reservedAppointments;
@@ -56,27 +61,15 @@ public abstract class Schedule {
     }
 
     private void extractConfigurationData(Properties properties){
-        String roomData = properties.getProperty("rooms").replaceAll("\"", "");
-        String timeData = properties.getProperty("workingTime").replaceAll("\"", "");
-        String startDateData = properties.getProperty("startDate").replaceAll("\"", "");
-        String endDateData = properties.getProperty("endDate").replaceAll("\"", "");
-        String freeDaysData = properties.getProperty("freeDays").replaceAll("\"", "");
-        String holidaysData = properties.getProperty("holidays").replaceAll("\"", "").replaceAll("\\.", "-");
-        String equipmentData = properties.getProperty("equipment").replaceAll("\"", "");
+        String[] workingHours = properties.getProperty("workingTime").replaceAll("\"", "").split("-");
+        LocalDate startDate = LocalDate.parse(properties.getProperty("startDate").replaceAll("\"", ""));
+        LocalDate endDate = LocalDate.parse(properties.getProperty("endDate").replaceAll("\"", ""));
+        String[] scheduleRooms = properties.getProperty("rooms").replaceAll("\"", "").split(",");
+        String[] freeDays = properties.getProperty("freeDays").replaceAll("\"", "").split(",");
+        String[] holidays = properties.getProperty("holidays").replaceAll("\"", "").replaceAll("\\.", "-").split(",");
+        String[] equipment = properties.getProperty("equipment").replaceAll("\"", "").split(",");
 
-        String[] workingHours = timeData.split("-");
-        LocalDate startDate = LocalDate.parse(startDateData);
-        LocalDate endDate = LocalDate.parse(endDateData);
-        String[] scheduleRooms = roomData.split(",");
-        String[] freeDays = freeDaysData.split(",");
-        String[] holidays = holidaysData.split(",");
-        String[] equipment = equipmentData.split(",");
-
-        initConfiguration(scheduleRooms, freeDays, holidays, workingHours[0], workingHours[1], startDate, endDate, equipment);
-    }
-
-    private void initConfiguration(String[] scheduleRooms, String[] freeDays, String[] holidays, String startTime, String endTime, LocalDate startDate, LocalDate endDate, String[] equipment) {
-        Arrays.stream(scheduleRooms).forEach(room -> initFreeRoom(room, freeDays, holidays, startTime, endTime, startDate, endDate, equipment));
+        Arrays.stream(scheduleRooms).forEach(room -> initFreeRoom(room, freeDays, holidays, workingHours[0], workingHours[1], startDate, endDate, equipment));
     }
 
     private void initFreeRoom(String room, String[] freeDays, String[] holidays, String startTime, String endTime, LocalDate startDate, LocalDate endDate, String[] equipment) {
@@ -95,7 +88,6 @@ public abstract class Schedule {
 
     private void initFreeAppointments(ScheduleRoom scheduleRoom, String[] freeDays, String[] holidays, String startTime, String endTime, LocalDate startDate, LocalDate endDate) {
         LocalDate currentDate = startDate;
-        
         while (!currentDate.isAfter(endDate)) {
             Day day = ScheduleUtils.getInstance().getDayFromDate(currentDate);
 
@@ -159,6 +151,41 @@ public abstract class Schedule {
         else throw new AppointmentOverlapException("Appointment cannot be added due overlapping with another appointment");
     }
 
+    /**
+     * Checks if an appointment can be added to the schedule without overlapping with existing appointments.
+     *
+     * @param appointment - The appointment to be checked for availability
+     * @return - True if the appointment time and room are available, false if there's an overlap
+     */
+    public boolean isAppointmentFree(Appointment appointment) {
+        return reservedAppointments.stream()
+                .filter(a -> a.getScheduleRoom().equals(appointment.getScheduleRoom())
+                        && a.getTime().getDay().equals(appointment.getTime().getDay())
+                        && !a.equals(appointment))
+                .noneMatch(a -> isDateOverlap(a, appointment) && isTimeOverlap(a, appointment));
+    }
+
+    private boolean isDateOverlap(Appointment appointment1, Appointment appointment2) {
+        LocalDate startDate1 = appointment1.getTime().getStartDate();
+        LocalDate endDate1 = appointment1.getTime().getEndDate();
+        LocalDate startDate2 = appointment2.getTime().getStartDate();
+        LocalDate endDate2 = appointment2.getTime().getEndDate();
+
+        if (startDate1.equals(startDate2) || endDate1.equals(startDate2)) return true;
+        return startDate1.isBefore(endDate2) && endDate1.isAfter(startDate2);
+    }
+
+    private boolean isTimeOverlap(Appointment appointment1, Appointment appointment2) {
+        int[] a1Start = ScheduleUtils.getInstance().getTimeComponents(appointment1.getTime().getStartTime());
+        int[] a1End = ScheduleUtils.getInstance().getTimeComponents(appointment1.getTime().getEndTime());
+        int[] a2Start = ScheduleUtils.getInstance().getTimeComponents(appointment2.getTime().getStartTime());
+        int[] a2End = ScheduleUtils.getInstance().getTimeComponents(appointment2.getTime().getEndTime());
+
+        if (!(a1End[0] <= a2Start[0] || a2End[0] <= a1Start[0])) return true;
+        if (a1End[0] == a2Start[0] && a1End[1] > a2Start[1]) return true;
+        return a2End[0] == a1Start[0] && a2End[1] > a1Start[1];
+    }
+
     private List<Appointment> getFreeAppointmentsByTarget(Appointment target) {
         return freeAppointments.stream()
                 .filter(freeAppointment -> freeAppointment.getScheduleRoom().equals(target.getScheduleRoom())
@@ -199,50 +226,6 @@ public abstract class Schedule {
     }
 
     /**
-     * Checks if an appointment can be added to the schedule without overlapping with existing appointments.
-     *
-     * @param appointment - The appointment to be checked for availability
-     * @return - True if the appointment time and room are available, false if there's an overlap
-     */
-    public boolean isAppointmentFree(Appointment appointment) {
-        return reservedAppointments.stream()
-                .filter(a -> a.getScheduleRoom().equals(appointment.getScheduleRoom())
-                        && a.getTime().getDay().equals(appointment.getTime().getDay())
-                        && !a.equals(appointment))
-                .noneMatch(a -> isDateOverlap(a, appointment) && isTimeOverlap(a, appointment));
-    }
-
-    private boolean isDateOverlap(Appointment appointment1, Appointment appointment2) {
-        LocalDate startDate1 = appointment1.getTime().getStartDate();
-        LocalDate endDate1 = appointment1.getTime().getEndDate();
-        LocalDate startDate2 = appointment2.getTime().getStartDate();
-        LocalDate endDate2 = appointment2.getTime().getEndDate();
-
-        if (startDate1.equals(startDate2) || endDate1.equals(startDate2)) return true;
-
-        return startDate1.isBefore(endDate2) && endDate1.isAfter(startDate2);
-    }
-
-    private boolean isTimeOverlap(Appointment appointment1, Appointment appointment2) {
-        String[] a1Start = appointment1.getTime().getStartTime().split(":");
-        String[] a1End = appointment1.getTime().getEndTime().split(":");
-        String[] a2Start = appointment2.getTime().getStartTime().split(":");
-        String[] a2End = appointment2.getTime().getEndTime().split(":");
-        int a1StartHours = Integer.parseInt(a1Start[0]);
-        int a1StartMinutes = a1Start.length == 2 ? Integer.parseInt(a1Start[1]) : 0;
-        int a1EndHours = Integer.parseInt(a1End[0]);
-        int a1EndMinutes = a1End.length == 2 ? Integer.parseInt(a1End[1]) : 0;
-        int a2StartHours = a2Start.length == 2 ? Integer.parseInt(a2Start[0]) : 0;
-        int a2StartMinutes = Integer.parseInt(a2Start[1]);
-        int a2EndHours = Integer.parseInt(a2End[0]);
-        int a2EndMinutes = a2End.length == 2 ? Integer.parseInt(a2End[1]) : 0;
-
-        if ((!(a1EndHours <= a2StartHours || a2EndHours <= a1StartHours))) return true;
-        if (a1EndHours == a2StartHours && a1EndMinutes > a2StartMinutes) return true;
-        return a2EndHours == a1StartHours && a2EndMinutes > a1StartMinutes;
-    }
-
-    /**
      * Deletes the given appointment from the schedule.
      *
      * @param appointment - Appointment to be deleted from the schedule
@@ -251,11 +234,11 @@ public abstract class Schedule {
         if (this.reservedAppointments == null || appointment == null) return;
         if (reservedAppointments.contains(appointment)) {
             this.reservedAppointments.remove(appointment);
-            mergeFreeAppointments(appointment);
+            fixFreeAppointments(appointment);
         }
     }
 
-    private void mergeFreeAppointments(Appointment deleteAppointment) {
+    private void fixFreeAppointments(Appointment deleteAppointment) {
         List<Appointment> candidates = getFreeAppointmentsByTarget(deleteAppointment);
         Map<LocalDate, List<Appointment>> candidatesByDate = new HashMap<>();
 
@@ -270,45 +253,52 @@ public abstract class Schedule {
             }
         });
 
-        merge(candidatesByDate, deleteAppointment);
+        groupFixFreeAppointments(candidatesByDate, deleteAppointment);
     }
 
-    private void merge(Map<LocalDate, List<Appointment>> candidatesByDate, Appointment deleteAppointment) {
+    private void groupFixFreeAppointments(Map<LocalDate, List<Appointment>> candidatesByDate, Appointment deleteAppointment) {
         for (LocalDate date : candidatesByDate.keySet()) {
             List<Appointment> candidates = candidatesByDate.get(date);
-
-            Appointment changed = null;
-            for (Appointment candidate : candidates) {
-                if (candidate.getTime().getStartTime().equals(deleteAppointment.getTime().getEndTime())) {
-                    candidate.getTime().setStartTime(deleteAppointment.getTime().getStartTime());
-                    changed = candidate;
-                    break;
-                }
-                else if (candidate.getTime().getEndTime().equals(deleteAppointment.getTime().getStartTime())) {
-                    candidate.getTime().setEndTime(deleteAppointment.getTime().getEndTime());
-                    changed = candidate;
-                    break;
-                }
-            }
-
+            Appointment changed = prepareForMerge(candidates, deleteAppointment);
             if (changed == null) {
                 FreeTime time = new FreeTime(deleteAppointment.getTime().getDay(), deleteAppointment.getTime().getStartTime(), deleteAppointment.getTime().getEndTime(), date);
                 Appointment appointment = new Appointment(time, deleteAppointment.getScheduleRoom());
                 freeAppointments.add(appointment);
                 return;
             }
-            for (Appointment candidate : candidates) {
-                if (candidate.equals(changed)) continue;
-                if (candidate.getTime().getEndTime().equals(changed.getTime().getStartTime())) {
-                    candidate.getTime().setEndTime(changed.getTime().getEndTime());
-                    freeAppointments.remove(changed);
-                    break;
-                }
-                else if (candidate.getTime().getStartTime().equals(changed.getTime().getEndTime())) {
-                    candidate.getTime().setStartTime(changed.getTime().getStartTime());
-                    freeAppointments.remove(changed);
-                    break;
-                }
+            merge(candidates, changed);
+        }
+    }
+
+    private Appointment prepareForMerge(List<Appointment> candidates, Appointment deleteAppointment) {
+        Appointment changed = null;
+        for (Appointment candidate : candidates) {
+            if (candidate.getTime().getStartTime().equals(deleteAppointment.getTime().getEndTime())) {
+                candidate.getTime().setStartTime(deleteAppointment.getTime().getStartTime());
+                changed = candidate;
+                break;
+            }
+            else if (candidate.getTime().getEndTime().equals(deleteAppointment.getTime().getStartTime())) {
+                candidate.getTime().setEndTime(deleteAppointment.getTime().getEndTime());
+                changed = candidate;
+                break;
+            }
+        }
+        return changed;
+    }
+
+    private void merge(List<Appointment> candidates, Appointment changed) {
+        for (Appointment candidate : candidates) {
+            if (candidate.equals(changed)) continue;
+            if (candidate.getTime().getEndTime().equals(changed.getTime().getStartTime())) {
+                candidate.getTime().setEndTime(changed.getTime().getEndTime());
+                freeAppointments.remove(changed);
+                break;
+            }
+            else if (candidate.getTime().getStartTime().equals(changed.getTime().getEndTime())) {
+                candidate.getTime().setStartTime(changed.getTime().getStartTime());
+                freeAppointments.remove(changed);
+                break;
             }
         }
     }
@@ -520,21 +510,22 @@ public abstract class Schedule {
      * Loads the schedule from a file in the specified format.
      *
      * @param path - Path to the file from which the schedule is loaded
+     * @param properties - Configuration file
      */
     public void loadScheduleFromFile(String path, Properties properties) throws IOException {
         if (path.endsWith(".csv")) loadFromCSV(path, properties);
+        else if (path.endsWith(".json")) loadFromJSON(path, properties);
     }
 
     private void loadFromCSV(String path, Properties properties) throws IOException {
         String startDateData = properties.getProperty("startDate").replaceAll("\"", "");
         String endDateData = properties.getProperty("endDate").replaceAll("\"", "");
-        String freeDaysData = properties.getProperty("freeDays").replaceAll("\"", "");
-        String holidaysData = properties.getProperty("holidays").replaceAll("\"", "").replaceAll("\\.", "-");
+        String container = properties.getProperty("columns").replaceAll("\"", "");
 
         try (CSVReader reader = new CSVReader(new FileReader(path))) {
             String[] row, header = reader.readNext();
             while ((row = reader.readNext()) != null) {
-                Map<String, Object> data = getDataFromColumn(row, header);
+                Map<String, Object> data = getDataFromColumn(row, header, container);
                 List<String> columnsList = Arrays.asList(header);
                 if (columnsList.contains("START_DATE") && columnsList.contains("END_DATE")) {
                     int indexOfStartDate = columnsList.indexOf("START_DATE");
@@ -549,71 +540,66 @@ public abstract class Schedule {
         }
     }
 
-    private Map<String, Object> getDataFromColumn(String[] row, String[] columns) {
+    private Map<String, Object> getDataFromColumn(String[] row, String[] columns, String container) {
         Map<String, Object> data = new LinkedHashMap<>();
-        for (int i = 0; i < columns.length-3; i++) {
-            data.put(columns[i], row[i]);
-        }
+        Arrays.stream(columns).
+                filter(column -> !column.equals("START_DATE")
+                        && !column.equals("END_DATE")
+                        && !column.equals("DAY")
+                        && !column.equals("TIME")
+                        && !column.equals("ROOM")
+                        && container.contains(column.replaceAll("﻿", "")))
+                .forEach(column -> data.put(column.replaceAll("﻿", ""), row[Arrays.asList(columns).indexOf(column)]));
+
         return data;
     }
 
-    private void classicDistribution(String[] row, String[] columns, Map<String, Object> data, int indexOfStartDate, int indexOfEndDate) {
-        String[] time = row[columns.length-2].split("-");
+    private Appointment createAppointmentFromCSVRow(String[] row, String[] header, Map<String, Object> data, LocalDate startDate, LocalDate endDate) {
+        int indexOfTime = Arrays.asList(header).indexOf("TIME");
+        int indexOfDay = Arrays.asList(header).indexOf("DAY");
+        int indexOfRoom = Arrays.asList(header).indexOf("ROOM");
+        String[] time = row[indexOfTime].split("-");
 
         Optional<ScheduleRoom> roomOptional = this.rooms.stream()
-                .filter(room -> room.getName().equals(row[columns.length-1]))
+                .filter(room -> room.getName().equals(row[indexOfRoom]))
                 .findFirst();
 
-        ScheduleRoom scheduleRoom = roomOptional.orElse(null);
-        if (scheduleRoom == null) {
-            scheduleRoom = new ScheduleRoom(row[columns.length-1], 0);
-            this.rooms.add(scheduleRoom);
-        }
+        ScheduleRoom scheduleRoom = roomOptional.orElseGet(() -> {
+            ScheduleRoom newRoom = new ScheduleRoom(row[indexOfRoom], 0);
+            this.rooms.add(newRoom);
+            return newRoom;
+        });
 
-        Appointment appointment = new Appointment(
-                new ReservedTime(
-                        Day.valueOf(row[columns.length-3]),
-                        time[0],
-                        time[1],
-                        LocalDate.parse(row[indexOfStartDate]),
-                        LocalDate.parse(row[indexOfEndDate])
-                ),
+        return new Appointment(
+                new ReservedTime(Day.valueOf(row[indexOfDay]), time[0], time[1], startDate, endDate),
                 scheduleRoom,
                 data
         );
+    }
+
+    private void classicDistribution(String[] row, String[] header, Map<String, Object> data, int indexOfStartDate, int indexOfEndDate) {
+        LocalDate startDate = LocalDate.parse(row[indexOfStartDate]);
+        LocalDate endDate = LocalDate.parse(row[indexOfEndDate]);
+        Appointment appointment = createAppointmentFromCSVRow(row, header, data, startDate, endDate);
         addAppointment(appointment);
     }
 
     private void dayDistribution(String[] row, String[] header, Map<String, Object> data, LocalDate startDate, LocalDate endDate) {
-        String[] time = row[header.length-2].split("-");
-
-        Optional<ScheduleRoom> roomOptional = this.rooms.stream()
-                .filter(room -> room.getName().equals(row[header.length-1]))
-                .findFirst();
-
-        ScheduleRoom scheduleRoom = roomOptional.orElse(null);
-        if (scheduleRoom == null) {
-            scheduleRoom = new ScheduleRoom(row[header.length-1], 0);
-            this.rooms.add(scheduleRoom);
-        }
-
-        ReservedTime reservedTime = new ReservedTime(Day.valueOf(row[header.length-3]), time[0], time[1], startDate, endDate);
-        Appointment appointment = new Appointment(
-                reservedTime,
-                scheduleRoom,
-                data
-        );
+        Appointment appointment = createAppointmentFromCSVRow(row, header, data, startDate, endDate);
         addAppointment(appointment);
     }
 
-    private boolean isDaySkip(Day day, String[] row, String[] columns, LocalDate currentDate, String[] freeDays, String[] holidays) {
-        if (!day.equals(Day.valueOf(row[columns.length-3]))) return true;
-        if (Arrays.stream(freeDays).anyMatch(freeDay -> freeDay.equals(day.toString()))) return true;
+    private void loadFromJSON(String path, Properties properties) throws IOException {
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(Time.class, new TimeAdapter())
+                .create();
 
-        return Arrays.stream(holidays)
-                .map(holiday -> currentDate.getYear() + "-" + holiday)
-                .map(LocalDate::parse)
-                .anyMatch(holidayDate -> holidayDate.isEqual(currentDate));
+        List<Appointment> appointments;
+        try (FileReader reader = new FileReader(path)) {
+            appointments = gson.fromJson(reader, new TypeToken<List<Appointment>>(){}.getType());
+        }
+
+        appointments.forEach(this::addAppointment);
     }
 
     /**
