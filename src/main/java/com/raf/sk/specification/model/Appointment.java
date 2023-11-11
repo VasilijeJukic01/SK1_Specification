@@ -5,6 +5,7 @@ import com.raf.sk.specification.model.time.Time;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Appointment class.
@@ -36,6 +37,14 @@ public class Appointment extends ScheduleObject {
 
     public ScheduleRoom getScheduleRoom() {
         return scheduleRoom;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Appointment that = (Appointment) o;
+        return Objects.equals(time, that.time) && Objects.equals(scheduleRoom, that.scheduleRoom);
     }
 
     @Override

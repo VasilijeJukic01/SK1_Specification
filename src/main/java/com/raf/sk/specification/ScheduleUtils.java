@@ -34,6 +34,23 @@ public class ScheduleUtils {
         return instance;
     }
 
+    public Configuration loadConfiguration(Properties properties) {
+        return new Configuration.Builder()
+                .workingTime(properties.getProperty("workingTime").replaceAll("\"", "").split("-"))
+                .startDate(LocalDate.parse(properties.getProperty("startDate").replaceAll("\"", "")))
+                .endDate(LocalDate.parse(properties.getProperty("endDate").replaceAll("\"", "")))
+                .freeDays(Arrays.stream(properties.getProperty("freeDays").replaceAll("\"", "").split(","))
+                        .map(dayString -> Day.valueOf(dayString.toUpperCase()))
+                        .toArray(Day[]::new))
+                .holidays(properties.getProperty("holidays").replaceAll("\"", "").replaceAll("\\.", "-").split(","))
+                .rooms(properties.getProperty("rooms").replaceAll("\"", "").split(","))
+                .equipment(properties.getProperty("equipment").replaceAll("\"", "").split(","))
+                .roomData(properties.getProperty("roomData").replaceAll("\"", "").split(","))
+                .csvHeader(properties.getProperty("csvHeader").equalsIgnoreCase("ON"))
+                .columns(properties.getProperty("columns").replaceAll("\"", ""))
+                .build();
+    }
+
     public Day getDayFromDate(LocalDate date) {
         return Day.values()[date.getDayOfWeek().getValue() - 1];
     }
@@ -190,16 +207,14 @@ public class ScheduleUtils {
     }
 
     // Appointment data operations
-    public void saveToCSV(List<Appointment> appointments, String path, Properties properties) throws IOException {
-        String header = properties.getProperty("csvHeader").replaceAll("\"", "");
-        String column = properties.getProperty("columns").replaceAll("\"", "");
+    public void saveToCSV(List<Appointment> appointments, String path, Configuration config) throws IOException {
+        boolean header = config.isCsvHeader();
+        String column = config.getColumns();
         column = column + ",DAY,TIME,ROOM";
         String[] columns = column.split(",");
 
         try (CSVWriter writer = new CSVWriter(new FileWriter(path))) {
-            if (header.equals("ON")) {
-                writer.writeNext(columns);
-            }
+            if (header) writer.writeNext(columns);
             String h = column;
             appointments.stream()
                     .map(appointment -> getCSVValues(appointment, h))
@@ -221,7 +236,6 @@ public class ScheduleUtils {
                 .map(s -> String.valueOf(appointment.getAllData().get(s)))
                 .forEach(values::add);
 
-
         values.addAll(Arrays.asList(
                 String.valueOf(appointment.getTime().getDay()),
                 appointment.getTime().getStartTime() + "-" + appointment.getTime().getEndTime(),
@@ -231,7 +245,7 @@ public class ScheduleUtils {
         return values;
     }
 
-    public void saveToJSON(List<Appointment> appointments, String path, Properties properties) {
+    public void saveToJSON(List<Appointment> appointments, String path) {
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(Time.class, new TimeAdapter())
                 .create();

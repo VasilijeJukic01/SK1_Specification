@@ -28,16 +28,16 @@ public class LoadSaveTest {
         schedule.addAppointment(a2);
         schedule.addAppointment(a3);
 
-        schedule.saveScheduleToFile("src/test/resources/test.json", "JSON", getProperties());
+        schedule.saveScheduleToFile("src/test/resources/test.json", "JSON");
 
     }
 
     @Test
     public void csv_import_test() throws IOException {
         Schedule schedule = new TestSchedule(getProperties());
-        schedule.loadScheduleFromFile("src/test/resources/krasno.json", getProperties());
-        System.out.println("Appointments:");
-        for (Appointment a : schedule.getReservedAppointments()) {
+        schedule.loadScheduleFromFile("src/test/resources/test.csv");
+
+        for (Appointment a : schedule.getFreeAppointments()) {
             System.out.println(a);
         }
     }

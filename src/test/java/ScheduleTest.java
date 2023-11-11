@@ -139,8 +139,6 @@ public class ScheduleTest {
         schedule.addAppointment(a4);
         schedule.addAppointment(a5);
 
-
-
         List<Appointment> freeAppointments = schedule.getFreeAppointments();
         List<Appointment> reservedAppointments = schedule.getReservedAppointments();
 
