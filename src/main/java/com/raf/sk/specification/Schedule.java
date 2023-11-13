@@ -275,9 +275,8 @@ public abstract class Schedule {
                 FreeTime time = new FreeTime(deleteAppointment.getTime().getDay(), deleteAppointment.getTime().getStartTime(), deleteAppointment.getTime().getEndTime(), date);
                 Appointment appointment = new Appointment(time, deleteAppointment.getScheduleRoom());
                 freeAppointments.add(appointment);
-                return;
             }
-            merge(candidates, changed);
+            else merge(candidates, changed);
         }
     }
 
@@ -640,6 +639,10 @@ public abstract class Schedule {
      */
     public List<ScheduleRoom> getRooms() {
         return Collections.unmodifiableList(rooms);
+    }
+
+    public void setConfig(Properties properties) {
+        this.config = ScheduleUtils.getInstance().loadConfiguration(properties);
     }
 
 }

@@ -26,8 +26,8 @@ public class FreeTime implements Time<LocalDate> {
 
     public FreeTime(Day day, String startTime, String endTime, LocalDate startDate) {
         this.day = day;
-        this.startTime = startTime;
-        this.endTime = endTime;
+        this.startTime = startTime.contains(":") ? startTime : startTime + ":00";
+        this.endTime = endTime.contains(":") ? endTime : endTime + ":00";
         this.date = startDate;
     }
 

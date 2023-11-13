@@ -26,16 +26,16 @@ public class ReservedTime implements Time<LocalDate> {
 
     public ReservedTime(Day day, String startTime, String endTime, LocalDate startDate, LocalDate endDate) {
         this.day = day;
-        this.startTime = startTime;
-        this.endTime = endTime;
+        this.startTime = startTime.contains(":") ? startTime : startTime + ":00";
+        this.endTime = endTime.contains(":") ? endTime : endTime + ":00";
         this.startDate = startDate;
         this.endDate = endDate;
     }
 
     public ReservedTime(String startTime, String endTime, LocalDate date) {
         this.day = ScheduleUtils.getInstance().getDayFromDate(date);
-        this.startTime = startTime;
-        this.endTime = endTime;
+        this.startTime = startTime.contains(":") ? startTime : startTime + ":00";
+        this.endTime = endTime.contains(":") ? endTime : endTime + ":00";
         this.startDate = date;
         this.endDate = date;
     }
