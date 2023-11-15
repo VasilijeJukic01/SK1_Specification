@@ -36,13 +36,29 @@ public abstract class Schedule {
 
     /**
      * Default constructor for initializing the schedule. Creates empty lists for appointments and rooms.
+     */
+    public Schedule() {
+        initSchedule(null);
+    }
+
+    /**
+     * Constructor for initializing the schedule. Creates empty lists for appointments and rooms.
+     * <p>
+     * @param properties - Schedule configuration file
+     */
+    public Schedule(Properties properties) {
+        initSchedule(properties);
+    }
+
+    /**
+     * Initializes the schedule with the given configuration.
      * <p>
      * Configuration file format is as follows:
      * workingTime = "${startHour}-${endHour}"
      * startDate = "${year}-${month}-${day}"
      * endDate = "${year}-${month}-${day}"
      * freeDays = "${day1},${day2},..."
-     * holidays = "${month1}.{day1},${month2}.${day2},..."
+     * holidays = "${month1}.${day1},${month2}.${day2},..."
      * rooms = "${room1}-${capacity1},${room2}-${capacity2},..."
      * equipment = "${room1}-${equipmentName1}-${amount1},${room2}-${equipmentName2}-${amount2},..."
      * roomData = "???"
@@ -51,15 +67,11 @@ public abstract class Schedule {
      *
      * @param properties - Schedule configuration file
      */
-    public Schedule(Properties properties) {
-        initSchedule(properties);
-    }
-
-    private void initSchedule(Properties properties) {
+    public void initSchedule(Properties properties) {
         this.reservedAppointments = new ArrayList<>();
         this.freeAppointments = new ArrayList<>();
         this.rooms = new ArrayList<>();
-        extractConfigurationData(properties);
+        if (properties != null) extractConfigurationData(properties);
     }
 
     private void extractConfigurationData(Properties properties){

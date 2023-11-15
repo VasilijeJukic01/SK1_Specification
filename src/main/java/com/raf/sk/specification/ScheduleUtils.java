@@ -45,7 +45,6 @@ public class ScheduleUtils {
                 .holidays(properties.getProperty("holidays").replaceAll("\"", "").replaceAll("\\.", "-").split(","))
                 .rooms(properties.getProperty("rooms").replaceAll("\"", "").split(","))
                 .equipment(properties.getProperty("equipment").replaceAll("\"", "").split(","))
-                .roomData(properties.getProperty("roomData").replaceAll("\"", "").split(","))
                 .csvHeader(properties.getProperty("csvHeader").equalsIgnoreCase("ON"))
                 .columns(properties.getProperty("columns").replaceAll("\"", ""))
                 .build();
@@ -222,6 +221,16 @@ public class ScheduleUtils {
         }
     }
 
+    public void saveToJSON(List<Appointment> appointments, String path) {
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(Time.class, new TimeAdapter())
+                .create();
+        try (FileWriter writer = new FileWriter(path)) {
+            gson.toJson(appointments, writer);
+        }
+        catch (Exception ignored) {}
+    }
+
     private List<String> getCSVValues(Appointment appointment, String header) {
         List<String> values = new ArrayList<>();
 
@@ -243,16 +252,6 @@ public class ScheduleUtils {
         ));
 
         return values;
-    }
-
-    public void saveToJSON(List<Appointment> appointments, String path) {
-        Gson gson = new GsonBuilder()
-                .registerTypeAdapter(Time.class, new TimeAdapter())
-                .create();
-        try (FileWriter writer = new FileWriter(path)) {
-            gson.toJson(appointments, writer);
-        }
-        catch (Exception ignored) {}
     }
 
 }

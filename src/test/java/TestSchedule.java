@@ -1,5 +1,3 @@
-package com.raf.sk.specification.model;
-
 import com.raf.sk.specification.Schedule;
 
 import java.util.Properties;

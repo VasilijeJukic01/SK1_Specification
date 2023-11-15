@@ -13,7 +13,6 @@ public class Configuration {
     private String[] holidays;
     private String[] rooms;
     private String[] equipment;
-    private String[] roomData;
     private boolean csvHeader;
     private String columns;
 
@@ -29,7 +28,6 @@ public class Configuration {
         private String[] holidays;
         private String[] rooms;
         private String[] equipment;
-        private String[] roomData;
         private boolean csvHeader;
         private String columns;
 
@@ -72,11 +70,6 @@ public class Configuration {
             return this;
         }
 
-        public Builder roomData(String[] roomData) {
-            this.roomData = roomData;
-            return this;
-        }
-
         public Builder csvHeader(boolean csvHeader) {
             this.csvHeader = csvHeader;
             return this;
@@ -96,7 +89,6 @@ public class Configuration {
             config.holidays = this.holidays;
             config.rooms = this.rooms;
             config.equipment = this.equipment;
-            config.roomData = this.roomData;
             config.csvHeader = this.csvHeader;
             config.columns = this.columns;
             return config;
@@ -129,10 +121,6 @@ public class Configuration {
 
     public String[] getEquipment() {
         return equipment;
-    }
-
-    public String[] getRoomData() {
-        return roomData;
     }
 
     public boolean isCsvHeader() {

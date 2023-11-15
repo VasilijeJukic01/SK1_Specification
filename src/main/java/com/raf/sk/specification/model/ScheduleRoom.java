@@ -4,30 +4,19 @@ import java.util.*;
 
 /**
  * Represents model for room.
- * <p>
- * @see ScheduleObject
  */
-public class ScheduleRoom extends ScheduleObject {
+public class ScheduleRoom {
 
     private final String name;
     private final int capacity;
     private List<Equipment> equipment = new ArrayList<>();
 
     public ScheduleRoom(String name, int capacity) {
-        super.data = new HashMap<>();
         this.name = name;
         this.capacity = capacity;
     }
 
     public ScheduleRoom(String name, int capacity, List<Equipment> equipment) {
-        super.data = new HashMap<>();
-        this.name = name;
-        this.capacity = capacity;
-        this.equipment = equipment;
-    }
-
-    public ScheduleRoom(String name, int capacity, List<Equipment> equipment, Map<String, Object> data) {
-        super.data = data;
         this.name = name;
         this.capacity = capacity;
         this.equipment = equipment;
