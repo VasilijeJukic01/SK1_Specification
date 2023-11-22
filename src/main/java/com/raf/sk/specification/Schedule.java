@@ -570,7 +570,13 @@ public abstract class Schedule {
                         && !column.equals("TIME")
                         && !column.equals("ROOM")
                         && container.contains(column.replaceAll("﻿", "")))
-                .forEach(column -> data.put(column.replaceAll("﻿", ""), row[Arrays.asList(columns).indexOf(column)]));
+                .forEach(column -> {
+                    int columnIndex = Arrays.asList(columns).indexOf(column);
+                    if (columnIndex >= 0 && columnIndex < row.length)
+                        data.put(column.replaceAll("﻿", ""), row[columnIndex]);
+                    else
+                        data.put(column.replaceAll("﻿", ""), null);
+                });
 
         return data;
     }

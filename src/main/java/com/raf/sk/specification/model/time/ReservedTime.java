@@ -1,6 +1,5 @@
 package com.raf.sk.specification.model.time;
 
-import com.raf.sk.specification.ScheduleUtils;
 import com.raf.sk.specification.model.Day;
 
 import java.time.LocalDate;
@@ -33,7 +32,7 @@ public class ReservedTime implements Time<LocalDate> {
     }
 
     public ReservedTime(String startTime, String endTime, LocalDate date) {
-        this.day = ScheduleUtils.getInstance().getDayFromDate(date);
+        this.day = Day.values()[date.getDayOfWeek().getValue() - 1];
         this.startTime = startTime.contains(":") ? startTime : startTime + ":00";
         this.endTime = endTime.contains(":") ? endTime : endTime + ":00";
         this.startDate = date;

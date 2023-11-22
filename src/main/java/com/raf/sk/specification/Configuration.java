@@ -4,7 +4,7 @@ import com.raf.sk.specification.model.Day;
 
 import java.time.LocalDate;
 
-public class Configuration {
+final class Configuration {
 
     private String[] workingTime;
     private LocalDate startDate;

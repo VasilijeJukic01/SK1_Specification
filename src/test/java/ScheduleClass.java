@@ -2,9 +2,9 @@ import com.raf.sk.specification.Schedule;
 
 import java.util.Properties;
 
-public class TestSchedule extends Schedule {
+public class ScheduleClass extends Schedule {
 
-    public TestSchedule(Properties properties) {
+    public ScheduleClass(Properties properties) {
         super(properties);
     }
 

@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * Utility class for schedule operations.
  */
 @SuppressWarnings("unused")
-public class ScheduleUtils {
+final class ScheduleUtils {
 
     private static volatile ScheduleUtils instance;
 
@@ -209,7 +209,7 @@ public class ScheduleUtils {
     public void saveToCSV(List<Appointment> appointments, String path, Configuration config) throws IOException {
         boolean header = config.isCsvHeader();
         String column = config.getColumns();
-        column = column + ",DAY,TIME,ROOM";
+        column = "DAY,TIME,ROOM" + ((column.isEmpty()) ? "" : "," + column);
         String[] columns = column.split(",");
 
         try (CSVWriter writer = new CSVWriter(new FileWriter(path))) {
